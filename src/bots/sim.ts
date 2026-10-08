@@ -56,15 +56,30 @@ export function sell(b: BotState, symbol: string, price: number, reason: string)
   return true;
 }
 
+export const newBot = (capital: number): BotState => ({
+  cash: capital,
+  startCapital: capital,
+  positions: [],
+  trades: [],
+  equity: [{ t: Date.now(), v: capital }],
+  lastRun: null,
+  lastLog: 'Noch nicht gelaufen.',
+  createdAt: Date.now(),
+});
+
 export function finish(b: BotState, log: string) {
   b.lastRun = Date.now();
   b.lastLog = log;
-  if (b.trades.length > 500) b.trades.length = 500;
+  if (b.trades.length > 300) b.trades.length = 300;
   const last = b.equity[b.equity.length - 1];
   const v = equityOf(b);
-  if (!last || Date.now() - last.t > 60_000) b.equity.push({ t: Date.now(), v });
+  if (!last || Date.now() - last.t > 15 * 60_000) b.equity.push({ t: Date.now(), v });
   else last.v = v;
-  if (b.equity.length > 3000) b.equity.splice(1, b.equity.length - 3000);
+  // Verlauf klein halten: ältere Hälfte ausdünnen (jeder zweite Punkt)
+  if (b.equity.length > 1500) {
+    const half = Math.floor(b.equity.length / 2);
+    b.equity = [...b.equity.slice(0, half).filter((_, i) => i % 2 === 0), ...b.equity.slice(half)];
+  }
 }
 
 export interface BotStats {

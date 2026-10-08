@@ -1,9 +1,7 @@
 import { getChart, toEur } from '../api/yahoo';
-import { getRanking } from '../analysis/ranking';
 import { biasLabel } from '../analysis/model';
 import { fmtPct } from '../format';
-import { getState, setState } from '../store';
-import { BotState } from '../types';
+import { BotState, RankItem } from '../types';
 import { buy, clone, equityOf, finish, sell } from './sim';
 
 const TARGET_POSITIONS = 8;
@@ -11,10 +9,10 @@ const STOP_LOSS = -0.15;
 const TAKE_PROFIT = 0.6;
 const MIN_HOLD_DAYS = 5;
 
-export async function runLongBot(): Promise<string> {
-  const ranking = await getRanking();
+/** Ein Durchgang des Langzeit-Bots auf Basis des Rankings (Preise bereits in EUR). Läuft auf dem GitHub-Server. */
+export async function stepLongBot(prev: BotState, ranking: RankItem[]): Promise<BotState> {
   const bySym = new Map(ranking.map((r, i) => [r.symbol, { r, rank: i + 1 }]));
-  const b: BotState = clone(getState().long);
+  const b: BotState = clone(prev);
   const log: string[] = [];
 
   b.positions.forEach((p) => {
@@ -63,8 +61,8 @@ export async function runLongBot(): Promise<string> {
   // Käufe: beste Aktien des Rankings mit Aufwärtstrend und moderater Schwankung
   const picks = ranking
     .map((r, i) => ({ r, rank: i + 1 }))
-    // Micro-Caps (<1 Mio. $ Tagesumsatz) sind zu illiquid für den Bot
-    .filter(({ r }) => r.score >= 1 && r.aboveSma200 && r.vol < 0.6 && r.liq !== 'micro')
+    // Nur gut handelbare Werte (Tagesumsatz > 10 Mio.): Small/Micro-Caps sind zu illiquid und kursspringend für den Bot
+    .filter(({ r }) => r.score >= 1 && r.aboveSma200 && r.vol < 0.6 && r.liq !== 'micro' && r.liq !== 'small')
     .filter(({ r }) => !b.positions.some((p) => p.symbol === r.symbol))
     .slice(0, 12);
   for (const { r, rank } of picks) {
@@ -78,6 +76,5 @@ export async function runLongBot(): Promise<string> {
   }
 
   finish(b, log.length ? log.join(', ') : 'Keine Änderung – Portfolio bleibt bestehen.');
-  setState(() => ({ long: b }));
-  return b.lastLog;
+  return b;
 }

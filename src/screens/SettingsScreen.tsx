@@ -1,40 +1,34 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React from 'react';
+import { Linking, ScrollView, StyleSheet, Text } from 'react-native';
+import { fetchBots } from '../bots/remote';
 import { Button, Card, Disclaimer, Screen, SectionTitle } from '../components/UI';
-import { fmtMoney } from '../format';
-import { resetBots, setState, useStore } from '../store';
-import { colors, radius, space } from '../theme';
+import { RESET_PAGE } from '../config';
+import { fmtDateTime, fmtMoney } from '../format';
+import { useAsync } from '../hooks';
+import { setState } from '../store';
+import { colors, space } from '../theme';
 
 export default function SettingsScreen() {
-  const capital = useStore((s) => s.startCapital);
-  const [val, setVal] = useState(String(capital));
-
-  const parsed = Number(val.replace(/\./g, '').replace(',', '.'));
-  const valid = isFinite(parsed) && parsed >= 100 && parsed <= 100_000_000;
-
-  const apply = () => {
-    Alert.alert(
-      'Startkapital ändern?',
-      `Beide Bots werden mit ${fmtMoney(parsed)} neu gestartet. Alle bisherigen Trades und Verläufe werden gelöscht.`,
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        { text: 'Zurücksetzen', style: 'destructive', onPress: () => resetBots(parsed) },
-      ],
-    );
-  };
+  const bots = useAsync(fetchBots, []);
 
   return (
     <Screen title="Einstellungen">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 50 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 50 }}>
         <SectionTitle>Virtuelles Startkapital</SectionTitle>
         <Card>
-          <Text style={s.muted}>Spielgeld für beide Bots (jeder Bot startet mit diesem Betrag). Aktuell: {fmtMoney(capital)}</Text>
-          <View style={s.inputWrap}>
-            <TextInput value={val} onChangeText={setVal} keyboardType="decimal-pad" style={s.input} placeholderTextColor={colors.muted} />
-            <Text style={s.eur}>€</Text>
-          </View>
-          <Button label="Speichern & Bots zurücksetzen" icon="refresh" onPress={apply} disabled={!valid || parsed === capital} />
-          {!valid ? <Text style={[s.muted, { color: colors.red, marginTop: 8 }]}>Bitte einen Betrag zwischen 100 und 100.000.000 eingeben.</Text> : null}
+          <Text style={s.muted}>
+            Spielgeld für beide Bots (jeder Bot startet mit diesem Betrag).{'\n'}
+            Aktuell: {bots.data ? fmtMoney(bots.data.startCapital) : bots.loading ? 'wird geladen …' : 'noch nicht gestartet (Standard 10.000,00 €)'}
+            {bots.data ? `\nBots laufen seit: ${fmtDateTime(bots.data.day.createdAt)}` : ''}
+          </Text>
+          <Text style={[s.muted, { marginTop: 12, lineHeight: 19 }]}>
+            Weil die Bots auf dem Server laufen, änderst du das Startkapital dort:{'\n'}
+            1. Knopf unten drücken (GitHub öffnet sich, ggf. anmelden){'\n'}
+            2. „Run workflow" antippen{'\n'}
+            3. Neues Startkapital eintragen und „Run workflow" bestätigen{'\n'}
+            Achtung: Alle bisherigen Trades und Verläufe beider Bots werden dabei gelöscht.
+          </Text>
+          <Button label="Startkapital auf GitHub ändern" icon="open-outline" onPress={() => Linking.openURL(RESET_PAGE)} />
         </Card>
 
         <SectionTitle>Daten</SectionTitle>
@@ -42,19 +36,15 @@ export default function SettingsScreen() {
           <Text style={s.muted}>
             Kurse: Yahoo Finance (inoffiziell, kostenlos, teils 15 Min. verzögert){'\n'}
             News: Google News, Yahoo Finance, Tagesschau, Handelsblatt (RSS){'\n'}
-            Alles läuft kostenlos und ohne Konto. Gespeichert wird nur lokal auf deinem Handy.
+            Alles läuft kostenlos und ohne Konto. Watchlist und Suchverlauf werden nur lokal auf deinem Handy gespeichert.
           </Text>
-          <Button
-            label="Watchlist & Verlauf der Suche löschen"
-            kind="ghost"
-            onPress={() => setState(() => ({ watchlist: [], recent: [] }))}
-          />
+          <Button label="Watchlist & Suchverlauf löschen" kind="ghost" onPress={() => setState(() => ({ watchlist: [], recent: [] }))} />
         </Card>
 
         <SectionTitle>Wichtig zu den Bots</SectionTitle>
         <Card>
           <Text style={s.muted}>
-            Die Bots handeln nur, solange die App geöffnet ist (Day-Trading-Bot alle 5 Minuten, Langzeit-Bot stündlich), und nur auf dem „Bots"-Tab. Ein rund um die Uhr laufender Bot braucht einen Server – das ist als nächster Ausbau möglich (kostenlos über GitHub Actions).{'\n\n'}
+            Die Bots laufen auf einem kostenlosen GitHub-Server, auch wenn die App geschlossen und der PC aus ist. Day-Trading-Bot: etwa alle 5 Minuten zu den Börsenzeiten (Mo–Fr), GitHub startet geplante Läufe manchmal mit Verspätung. Langzeit-Bot: täglich nach der Ranking-Berechnung.{'\n\n'}
             Gebühren von 0,05 % pro Order werden simuliert. Kurse in US-Dollar werden zum aktuellen Wechselkurs in Euro umgerechnet.
           </Text>
         </Card>
@@ -66,7 +56,4 @@ export default function SettingsScreen() {
 
 const s = StyleSheet.create({
   muted: { color: colors.muted, fontSize: 13, lineHeight: 19 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card2, borderRadius: radius.s + 2, paddingHorizontal: 14, marginTop: 12 },
-  input: { flex: 1, color: colors.text, fontSize: 20, fontWeight: '700', paddingVertical: 12 },
-  eur: { color: colors.muted, fontSize: 18, fontWeight: '700' },
 });

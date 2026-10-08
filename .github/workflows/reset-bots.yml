@@ -1,0 +1,40 @@
+name: Bots zurücksetzen
+
+on:
+  workflow_dispatch:
+    inputs:
+      startCapital:
+        description: 'Neues Startkapital in Euro (löscht alle bisherigen Trades!)'
+        default: '10000'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bots
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bots neu starten
+        env:
+          MODE: reset
+          DATA_DIR: botdata
+          START_CAPITAL: ${{ github.event.inputs.startCapital }}
+        run: npx --yes tsx@4 scripts/runBots.ts
+      - name: Stand speichern
+        run: |
+          cd botdata
+          git init --quiet -b data
+          git config user.name "bot-server"
+          git config user.email "bot-server@users.noreply.github.com"
+          git add bots.json
+          git commit --quiet -m "Bots zurückgesetzt"
+          git push --quiet --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data

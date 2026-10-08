@@ -1,5 +1,6 @@
-import { getChart, getEurUsd, pool, toEur } from '../api/yahoo';
+import { getChart, pool, toEur } from '../api/yahoo';
 import { RANKING_URL } from '../config';
+import { toRankItems } from './rankingData';
 import { RankItem, RankingMeta } from '../types';
 import { pctChange, sma } from './indicators';
 import { assessBias, biasLabel, driftStats, expectedReturn } from './model';
@@ -17,8 +18,7 @@ async function remoteRanking(): Promise<{ items: RankItem[]; meta: RankingMeta }
   const res = await fetch(`${RANKING_URL}?t=${Math.floor(Date.now() / 600_000)}`);
   if (!res.ok) throw new Error(`Ranking-Server nicht erreichbar (HTTP ${res.status})`);
   const j = await res.json();
-  const fx = await getEurUsd();
-  const items: RankItem[] = (j.items as RankItem[]).map((r) => ({ ...r, price: r.currency === 'EUR' ? r.price : r.price / fx }));
+  const items = await toRankItems(j);
   if (!items.length) throw new Error('Ranking-Datei ist leer');
   return { items, meta: { source: 'server', generatedAt: j.generatedAt, analyzed: j.analyzed, counts: j.counts } };
 }

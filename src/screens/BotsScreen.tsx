@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { botStats } from '../bots/sim';
-import { runDayBot } from '../bots/dayBot';
-import { runLongBot } from '../bots/longBot';
+import { fetchBots } from '../bots/remote';
 import Chart, { Pt } from '../components/Chart';
 import { PctText } from '../components/Rows';
-import { Button, Card, Screen, SectionTitle, Segmented, Stat } from '../components/UI';
-import { fmtDateTime, fmtMoney, fmtNum, fmtPct } from '../format';
-import { useStore } from '../store';
+import { Button, Card, ErrorBox, Loading, Screen, SectionTitle, Segmented, Stat } from '../components/UI';
+import { BOTS_PAGE } from '../config';
+import { fmtDateTime, fmtMoney, fmtNum, fmtPct, timeAgo } from '../format';
+import { useAsync } from '../hooks';
 import { BotState, Trade } from '../types';
 import { colors, signColor, space } from '../theme';
 
@@ -21,39 +21,33 @@ const GOAL = 0.3;
 export default function BotsScreen() {
   const [which, setWhich] = useState<Which>('day');
   const [sub, setSub] = useState<Sub>('overview');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const bot = useStore((s) => s[which]);
-  const busyRef = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const data = useAsync(fetchBots, []);
+  const bot = data.data ? data.data[which] : null;
 
-  const run = async (w: Which) => {
-    if (busyRef.current) return;
-    busyRef.current = true;
-    setBusy(true);
-    setMsg('');
-    try {
-      await (w === 'day' ? runDayBot() : runLongBot());
-    } catch (e: any) {
-      setMsg(e?.message ?? 'Fehler beim Ausführen');
-    } finally {
-      busyRef.current = false;
-      setBusy(false);
-    }
-  };
-
-  // Läuft nur, solange die App offen und dieser Tab sichtbar ist
+  // Die Bots laufen auf dem Server – die App holt nur den neuesten Stand (jede Minute)
   useEffect(() => {
-    const ms = which === 'day' ? 5 * 60_000 : 60 * 60_000;
-    const last = bot.lastRun ?? 0;
-    if (Date.now() - last > ms) run(which);
-    const h = setInterval(() => run(which), ms);
+    const h = setInterval(() => data.reload(), 60_000);
     return () => clearInterval(h);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [which]);
+  }, []);
 
   return (
     <Screen title="Trading-Bots" subtitle="Papertrading mit Spielgeld – jeder Trade wird begründet">
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 50 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 50 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            tintColor={colors.accent}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await data.reload();
+              setRefreshing(false);
+            }}
+          />
+        }
+      >
         <Segmented
           value={which}
           onChange={(w) => {
@@ -67,30 +61,46 @@ export default function BotsScreen() {
         />
         <Text style={s.desc}>
           {which === 'day'
-            ? 'Handelt kurzfristig innerhalb des Tages (5-Minuten-Kurse, VWAP + RSI), mit engem Stop-Loss, und schließt abends alles. Läuft alle 5 Minuten, solange die App offen ist.'
-            : 'Kauft die am besten bewerteten Aktien des Rankings, streut auf 8 Positionen und hält Wochen bis Monate. Prüft stündlich.'}
+            ? 'Handelt kurzfristig innerhalb des Tages (5-Minuten-Kurse, VWAP + RSI), mit engem Stop-Loss, und schließt abends alles. Läuft auf dem Server alle ca. 5 Minuten zu den Börsenzeiten – auch bei geschlossener App.'
+            : 'Kauft die am besten bewerteten Aktien des Rankings, streut auf 8 Positionen und hält Wochen bis Monate. Läuft auf dem Server täglich nach dem Ranking – auch bei geschlossener App.'}
         </Text>
 
-        <View style={{ marginTop: space.m }}>
-          <Segmented
-            value={sub}
-            onChange={setSub}
-            options={[
-              { key: 'overview', label: 'Übersicht' },
-              { key: 'positions', label: 'Positionen' },
-              { key: 'trades', label: 'Trades' },
-            ]}
-          />
-        </View>
+        {data.loading && !data.data ? <Loading text="Bot-Stand wird geladen …" /> : null}
+        {data.error && !data.data ? <ErrorBox text={data.error} onRetry={data.reload} /> : null}
+        {data.data === null && !data.loading && !data.error ? (
+          <Card style={{ marginTop: space.l }}>
+            <Text style={{ color: colors.text, fontWeight: '700' }}>Die Bots haben noch nicht gehandelt</Text>
+            <Text style={[s.muted, { marginTop: 6, lineHeight: 18 }]}>
+              Der erste Durchgang startet automatisch zur nächsten Börsenzeit (Mo–Fr). Du kannst ihn auch sofort auf GitHub starten: Workflow „Bots handeln" → „Run workflow".
+            </Text>
+            <Button label="GitHub-Seite öffnen" icon="open-outline" kind="ghost" onPress={() => Linking.openURL(BOTS_PAGE)} />
+          </Card>
+        ) : null}
 
-        {sub === 'overview' && <Overview bot={bot} />}
-        {sub === 'positions' && <Positions bot={bot} />}
-        {sub === 'trades' && <Trades bot={bot} />}
+        {bot ? (
+          <>
+            <View style={{ marginTop: space.m }}>
+              <Segmented
+                value={sub}
+                onChange={setSub}
+                options={[
+                  { key: 'overview', label: 'Übersicht' },
+                  { key: 'positions', label: 'Positionen' },
+                  { key: 'trades', label: 'Trades' },
+                ]}
+              />
+            </View>
 
-        <Button label={busy ? 'Bot arbeitet …' : 'Bot jetzt ausführen'} icon="play" onPress={() => run(which)} disabled={busy} kind="ghost" />
-        <Text style={s.log}>
-          {msg ? `⚠ ${msg}` : `Letzter Lauf: ${bot.lastRun ? fmtDateTime(bot.lastRun) : '–'} · ${bot.lastLog}`}
-        </Text>
+            {sub === 'overview' && <Overview bot={bot} />}
+            {sub === 'positions' && <Positions bot={bot} />}
+            {sub === 'trades' && <Trades bot={bot} />}
+
+            <Text style={s.log}>
+              Letzter Bot-Lauf: {bot.lastRun ? `${fmtDateTime(bot.lastRun)} (${timeAgo(bot.lastRun)})` : '–'} · {bot.lastLog}
+              {'\n'}Ansicht aktualisiert sich jede Minute, zum Neuladen nach unten ziehen.
+            </Text>
+          </>
+        ) : null}
       </ScrollView>
     </Screen>
   );

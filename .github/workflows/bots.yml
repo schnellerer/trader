@@ -1,0 +1,60 @@
+name: Bots handeln
+
+on:
+  schedule:
+    # Day-Trading-Bot: alle 5 Minuten zu den Börsenzeiten (UTC, Mo-Fr). Letzter Lauf kurz nach US-Schluss.
+    - cron: '*/5 6-21 * * 1-5'
+    # Langzeit-Bot: Mittags (Kurse aktualisieren) und nach der Ranking-Berechnung
+    - cron: '0 15 * * 1-5'
+    - cron: '10 23 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Welcher Bot? (day, long oder both)'
+        default: 'both'
+
+permissions:
+  contents: write
+
+# Nur ein Lauf gleichzeitig, damit sich die Läufe nicht gegenseitig überschreiben
+concurrency:
+  group: bots
+  cancel-in-progress: false
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bot-Stand laden (Daten-Branch)
+        run: |
+          git clone --quiet --depth 1 --branch data "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" botdata 2>/dev/null || {
+            mkdir botdata
+            git -C botdata init --quiet -b data
+          }
+      - name: Modus bestimmen
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then M="${{ github.event.inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "*/5 6-21 * * 1-5" ]; then M=day
+          else M=long; fi
+          echo "mode=$M" >> "$GITHUB_OUTPUT"
+      - name: Bots handeln lassen
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
+          DATA_DIR: botdata
+        run: npx --yes tsx@4 scripts/runBots.ts
+      - name: Stand speichern
+        if: always()
+        run: |
+          cd botdata
+          [ -f bots.json ] || exit 0
+          git config user.name "bot-server"
+          git config user.email "bot-server@users.noreply.github.com"
+          git add bots.json
+          git commit --quiet --amend -m "Bot-Stand" 2>/dev/null || git commit --quiet -m "Bot-Stand"
+          git push --quiet --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data

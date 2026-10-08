@@ -1,38 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
-import { BotState } from './types';
 
 export interface AppState {
   loaded: boolean;
-  startCapital: number;
   watchlist: string[];
   recent: string[];
-  day: BotState;
-  long: BotState;
 }
 
-export const newBot = (capital: number): BotState => ({
-  cash: capital,
-  startCapital: capital,
-  positions: [],
-  trades: [],
-  equity: [{ t: Date.now(), v: capital }],
-  lastRun: null,
-  lastLog: 'Noch nicht gelaufen.',
-  createdAt: Date.now(),
-});
+const KEY = 'trader-state-v2';
 
-const DEFAULT_CAPITAL = 10000;
-const KEY = 'trader-state-v1';
-
-let state: AppState = {
-  loaded: false,
-  startCapital: DEFAULT_CAPITAL,
-  watchlist: [],
-  recent: [],
-  day: newBot(DEFAULT_CAPITAL),
-  long: newBot(DEFAULT_CAPITAL),
-};
+let state: AppState = { loaded: false, watchlist: [], recent: [] };
 
 const listeners = new Set<() => void>();
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -40,8 +17,8 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 function persist() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    const { loaded, ...rest } = state;
-    AsyncStorage.setItem(KEY, JSON.stringify(rest)).catch(() => {});
+    const { watchlist, recent } = state;
+    AsyncStorage.setItem(KEY, JSON.stringify({ watchlist, recent })).catch(() => {});
   }, 300);
 }
 
@@ -54,19 +31,13 @@ export function setState(fn: (s: AppState) => Partial<AppState>) {
 export async function initStore() {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (raw) {
-      const saved = JSON.parse(raw);
-      state = { ...state, ...saved, loaded: true };
-    } else {
-      state = { ...state, loaded: true };
-    }
+    const saved = raw ? JSON.parse(raw) : {};
+    state = { loaded: true, watchlist: saved.watchlist ?? [], recent: saved.recent ?? [] };
   } catch {
     state = { ...state, loaded: true };
   }
   listeners.forEach((l) => l());
 }
-
-export const getState = () => state;
 
 export function useStore<T>(selector: (s: AppState) => T): T {
   return useSyncExternalStore(
@@ -84,8 +55,4 @@ export function toggleWatch(symbol: string) {
 
 export function addRecent(symbol: string) {
   setState((s) => ({ recent: [symbol, ...s.recent.filter((x) => x !== symbol)].slice(0, 8) }));
-}
-
-export function resetBots(capital: number) {
-  setState(() => ({ startCapital: capital, day: newBot(capital), long: newBot(capital) }));
 }

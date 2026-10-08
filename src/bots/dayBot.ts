@@ -2,7 +2,6 @@ import { getChart, pool, toEur } from '../api/yahoo';
 import { DAY_UNIVERSE } from '../analysis/universe';
 import { rsi } from '../analysis/indicators';
 import { fmtPct } from '../format';
-import { getState, setState } from '../store';
 import { BotState } from '../types';
 import { buy, clone, equityOf, finish, sell } from './sim';
 
@@ -49,17 +48,19 @@ async function snapshot(symbol: string): Promise<Snap | null> {
     dayChg: last.c / closes[0] - 1,
     mom: last.c / closes[Math.max(0, closes.length - 8)] - 1,
     open,
-    closingSoon: open && end > 0 && Date.now() > end - 12 * 60_000,
+    // 25 Min. Puffer, weil GitHub geplante Läufe manchmal verspätet startet
+    closingSoon: open && end > 0 && Date.now() > end - 25 * 60_000,
   };
 }
 
 const sameDay = (a: number, b: number) => new Date(a).toDateString() === new Date(b).toDateString();
 
-export async function runDayBot(): Promise<string> {
+/** Ein Handelsdurchgang des Day-Trading-Bots. Gibt den neuen Zustand zurück (reine Funktion, läuft auf dem GitHub-Server). */
+export async function stepDayBot(prev: BotState): Promise<BotState> {
   const snaps = (await pool(DAY_UNIVERSE, 6, snapshot)).filter((x): x is Snap => !!x);
   if (!snaps.length) throw new Error('Keine Intraday-Daten erreichbar');
   const bySym = new Map(snaps.map((s) => [s.symbol, s]));
-  const b: BotState = clone(getState().day);
+  const b: BotState = clone(prev);
   const log: string[] = [];
 
   // Kurse aktualisieren
@@ -107,6 +108,5 @@ export async function runDayBot(): Promise<string> {
   }
 
   finish(b, log.length ? log.join(', ') : 'Keine Handelssignale.');
-  setState(() => ({ day: b }));
-  return b.lastLog;
+  return b;
 }
