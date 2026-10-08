@@ -47,6 +47,14 @@ const SECTIONS: Sec[] = [
       'Wichtig: Die Fundament-Schwellen sind Faustregeln, Branchen unterscheiden sich stark, und sie sind nicht rückblickend getestet (Yahoo liefert keine alten Kennzahlen). Der Backtest belegt nur die Momentum-Regeln.',
   },
   {
+    icon: 'skull',
+    title: 'W.A.F – We Are Fucked (Deutschland)',
+    body:
+      'Ein Spaß-Index mit echten Zahlen: Wie sehr ist die Gen Z in Deutschland gerade aufgeschmissen? 0 = läuft, 100 = maximal fucked. Er setzt sich aus sechs Bereichen zusammen: Preise im Alltag (Inflation, Lebensmittel, Energie), Wohnen (Mieten, Hypothekenzins, Immobilienpreise), Job & Zukunft (Jugendarbeitslosigkeit, Arbeitslosigkeit, Wirtschaftswachstum), Börse (DAX), Politik-Schlagzeilen und Krypto-Frust.\n\n' +
+      'Jeden Tag berechnet der Server den Wert neu und merkt sich den Verlauf; die Pfeile zeigen die Veränderung zur Vorwoche. Tippe einen Bereich an, um die Einzelzahlen mit Datum zu sehen.\n\n' +
+      'Wichtig: Gewichte und Schwellen sind meine Willkür, kein wissenschaftlicher Index. Amtliche Zahlen kommen mit Verzögerung (das Datum steht dabei). Der Politik-Wert misst nur, wie viele Schlagzeilen Krisen-Wörter enthalten, nicht, wer recht hat. Es ist Satire und keine Meinung zu einer Partei oder eine Prognose.',
+  },
+  {
     icon: 'newspaper',
     title: 'News & Quellen',
     body:

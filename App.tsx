@@ -10,6 +10,7 @@ import BotsScreen from './src/screens/BotsScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import DiscoverScreen from './src/screens/DiscoverScreen';
 import TrainingScreen from './src/screens/TrainingScreen';
+import WafScreen from './src/screens/WafScreen';
 import MarketsScreen from './src/screens/MarketsScreen';
 import MoreScreen from './src/screens/MoreScreen';
 import { initStore, useStore } from './src/store';
@@ -28,6 +29,7 @@ const icons: Record<string, [string, string]> = {
   Entdecken: ['compass', 'compass-outline'],
   Bots: ['hardware-chip', 'hardware-chip-outline'],
   Training: ['barbell', 'barbell-outline'],
+  WAF: ['skull', 'skull-outline'],
   Mehr: ['menu', 'menu-outline'],
 };
 
@@ -47,6 +49,7 @@ function Tabs() {
       <Tab.Screen name="Entdecken" component={DiscoverScreen} />
       <Tab.Screen name="Bots" component={BotsScreen} />
       <Tab.Screen name="Training" component={TrainingScreen} />
+      <Tab.Screen name="WAF" component={WafScreen} options={{ title: 'W.A.F', tabBarLabel: 'W.A.F' }} />
       <Tab.Screen name="Mehr" component={MoreScreen} />
     </Tab.Navigator>
   );
