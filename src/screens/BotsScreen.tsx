@@ -116,10 +116,10 @@ export default function BotsScreen() {
               <Segmented value={subOptions.some((o) => o.key === sub) ? sub : 'overview'} onChange={setSub} options={subOptions} />
             </View>
 
+            {sub === 'overview' && <Overview bot={bot} intraday={intraday} onToday={() => setSub('today')} />}
             {sub === 'overview' && which !== 'proof' && (
               <RiskCard bot={which} serverValue={data.data?.settings?.[which]} onApplied={() => data.reload()} />
             )}
-            {sub === 'overview' && <Overview bot={bot} intraday={intraday} onToday={() => setSub('today')} />}
             {sub === 'today' && <TodayTab bot={bot} />}
             {sub === 'positions' && <Positions bot={bot} />}
             {sub === 'trades' && <Trades bot={bot} />}
