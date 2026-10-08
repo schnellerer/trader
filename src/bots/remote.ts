@@ -11,7 +11,10 @@ export interface BotsFile {
 
 /** Lädt den aktuellen Stand der Bots vom GitHub-Server. null = Bots haben noch nicht gelaufen. */
 export async function fetchBots(): Promise<BotsFile | null> {
-  const res = await fetch(`${BOTS_URL}?t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+  const res = await fetch(`${BOTS_URL}?nocache=${Date.now()}${Math.floor(Math.random() * 1e6)}`, {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Bot-Server nicht erreichbar (HTTP ${res.status})`);
   return res.json();

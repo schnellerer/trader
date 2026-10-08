@@ -97,7 +97,9 @@ export default function BotsScreen() {
         ) : null}
         {data.data && !bot ? (
           <Card style={{ marginTop: space.l }}>
-            <Text style={s.muted}>Dieser Bot startet mit dem nächsten Server-Lauf (spätestens in ein paar Minuten, Mo–Fr). Danach nach unten ziehen.</Text>
+            <Text style={s.muted}>
+              In den geladenen Daten ist dieser Bot noch nicht enthalten (Stand der Daten: {fmtDateTime(data.data.updatedAt)}, {timeAgo(data.data.updatedAt)}). Nach unten ziehen zum Neuladen. Wenn der Stand dann immer noch alt ist, hat der Server noch nicht neu gespeichert.
+            </Text>
           </Card>
         ) : null}
 
@@ -116,7 +118,7 @@ export default function BotsScreen() {
 
             <Text style={s.log}>
               Letzter Bot-Lauf: {bot.lastRun ? `${fmtDateTime(bot.lastRun)} (${timeAgo(bot.lastRun)})` : '–'} · {bot.lastLog}
-              {'\n'}Ansicht aktualisiert sich jede Minute, zum Neuladen nach unten ziehen.
+              {'\n'}Server-Stand von {data.data ? fmtDateTime(data.data.updatedAt) : '–'} · Ansicht aktualisiert sich jede Minute, zum Neuladen nach unten ziehen.
             </Text>
           </>
         ) : null}
