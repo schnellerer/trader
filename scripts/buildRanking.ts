@@ -12,6 +12,8 @@ import { getChart, pool } from '../src/api/yahoo';
 import { DE_STOCKS } from '../src/analysis/universe';
 import { pctChange, rsi, sma } from '../src/analysis/indicators';
 import { assessBias, biasLabel, driftStats, expectedReturn } from '../src/analysis/model';
+import { fetchFundamentals, Fund, FUND_FIELDS, packFund } from '../src/api/fundamentals';
+import { FundScore, scoreFund } from '../src/analysis/fundamental';
 import { notify } from './notify';
 import { updateTrack } from './track';
 
@@ -148,12 +150,40 @@ async function main() {
   const rsOf = new Map(byMom.map((x, i) => [x.symbol, Math.max(1, Math.min(99, Math.round(((i + 1) / byMom.length) * 99)))]));
   const withRs = items.map((x) => ({ ...x, rs: rsOf.get(x.symbol)! })).sort((a, b) => b.rankKey - a.rankKey);
 
+  // Fundamentaldaten (Bewertung, Wachstum, Qualität, Analysten) für alle Aktien außer Micro-Caps
+  const fundMap = new Map<string, Fund>();
+  const fundScore = new Map<string, FundScore>();
+  {
+    const targets = withRs.filter((x) => x.liq !== 'micro');
+    let fdone = 0;
+    let ferr = 0;
+    let aborted = false;
+    console.log(`Hole Fundamentaldaten für ${targets.length} Aktien …`);
+    await pool(targets, 4, async (x) => {
+      if (aborted) return;
+      try {
+        const f = await fetchFundamentals(x.symbol);
+        if (f) {
+          fundMap.set(x.symbol, f);
+          fundScore.set(x.symbol, scoreFund(f, x.price));
+        }
+      } catch (e) {
+        ferr++;
+        if (ferr > 60 && ferr > fdone * 0.5) aborted = true; // Yahoo blockt → Schritt abbrechen, Rest läuft trotzdem
+      }
+      if (++fdone % 500 === 0) console.log(`  Fundamentaldaten ${fdone}/${targets.length} (${fundMap.size} mit Daten, ${ferr} Fehler)`);
+    });
+    if (aborted) console.warn('Fundamentaldaten abgebrochen (zu viele Fehler) – Ranking läuft ohne.');
+    console.log(`Fundamentaldaten: ${fundMap.size} Aktien`);
+  }
+  const fundOf = (s: string) => fundScore.get(s)?.total;
+
   // Pro Liquiditätsklasse die besten 60 behalten (hält die Datei klein)
   const classes: Liq[] = ['large', 'mid', 'small', 'micro'];
   const keep = classes
     .flatMap((c) => withRs.filter((x) => x.liq === c).slice(0, 60))
     .sort((a, b) => b.rankKey - a.rankKey)
-    .map(({ momentum, rsi14, hi52Dist, volSurge, m1, m6, m12, ...rest }) => rest);
+    .map(({ momentum, rsi14, hi52Dist, volSurge, m1, m6, m12, ...rest }) => ({ ...rest, fund: fundOf(rest.symbol) }));
   const counts = Object.fromEntries(classes.map((c) => [c, withRs.filter((x) => x.liq === c).length]));
 
   // Scanner-Datei: alle Aktien, kompakt als Zahlenreihen
@@ -175,6 +205,13 @@ async function main() {
     r4(x.vol),
     x.aboveSma200 ? 1 : 0,
     x.earnings ?? '',
+    fundOf(x.symbol) ?? null,
+    fundMap.get(x.symbol)?.fpe ?? fundMap.get(x.symbol)?.pe ?? null,
+    fundMap.get(x.symbol)?.rev ?? null,
+    fundMap.get(x.symbol)?.mar ?? null,
+    fundScore.get(x.symbol)?.upside != null ? r4(fundScore.get(x.symbol)!.upside!) : null,
+    fundMap.get(x.symbol)?.div ?? null,
+    fundMap.get(x.symbol)?.sec ?? null,
   ]);
 
   mkdirSync('data', { recursive: true });
@@ -183,10 +220,15 @@ async function main() {
     'data/scan.json',
     JSON.stringify({
       generatedAt: Date.now(),
-      fields: ['symbol', 'name', 'liq', 'price', 'currency', 'rs', 'rsi', 'hi52', 'vol', 'm1', 'm6', 'm12', 'score', 'sigma', 'up', 'earnings'],
+      fields: ['symbol', 'name', 'liq', 'price', 'currency', 'rs', 'rsi', 'hi52', 'vol', 'm1', 'm6', 'm12', 'score', 'sigma', 'up', 'earnings', 'fund', 'pe', 'revg', 'margin', 'upside', 'div', 'sector'],
       rows: scan,
     }),
   );
+  if (fundMap.size > 0) {
+    const rows: Record<string, unknown[]> = {};
+    fundMap.forEach((f, s) => (rows[s] = packFund(f)));
+    writeFileSync('data/fundamentals.json', JSON.stringify({ generatedAt: Date.now(), fields: FUND_FIELDS, rows }));
+  }
   writeFileSync('data/earnings.json', JSON.stringify({ generatedAt: Date.now(), map: earnings }));
   if (!limit) updateTrack(withRs.map((x) => ({ symbol: x.symbol, price: x.price, expected: x.expected, score: x.score, vol: x.vol, rankKey: x.rankKey, liq: x.liq })));
   console.log(`Fertig in ${Math.round((Date.now() - t0) / 1000)} s: ${items.length} von ${list.length} ausgewertet`, counts);

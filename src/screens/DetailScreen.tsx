@@ -4,6 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { analyzeStock } from '../analysis/analyze';
+import { getFund } from '../analysis/fundData';
+import { combineVerdict, scoreFund } from '../analysis/fundamental';
+import { buildPlan } from '../analysis/tradePlan';
+import { equityOf } from '../bots/sim';
+import { FundTab, PlanTab, VerdictCard } from '../components/StockPanels';
 import { biasLabel, horizonLabel } from '../analysis/model';
 import { getChart, RANGES, RangeKey } from '../api/yahoo';
 import Chart, { Pt } from '../components/Chart';
@@ -11,10 +16,19 @@ import { NewsRow, PctText } from '../components/Rows';
 import { BiasBadge, Card, Disclaimer, ErrorBox, Loading, SectionTitle, Segmented, Stat } from '../components/UI';
 import { currencySymbol, fmtDateTime, fmtNum, fmtPct } from '../format';
 import { useAsync } from '../hooks';
-import { toggleWatch, useStore } from '../store';
+import { getState, toggleWatch, useStore } from '../store';
 import { colors, signColor, space } from '../theme';
 
-type Tab = 'overview' | 'analysis' | 'scenarios' | 'news';
+type Tab = 'overview' | 'fund' | 'plan' | 'analysis' | 'scenarios' | 'news';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'overview', label: 'Überblick' },
+  { key: 'fund', label: 'Fundament' },
+  { key: 'plan', label: 'Trade-Plan' },
+  { key: 'analysis', label: 'Chart' },
+  { key: 'scenarios', label: 'Szenarien' },
+  { key: 'news', label: 'News' },
+];
 
 export default function DetailScreen() {
   const nav = useNavigation<any>();
@@ -28,8 +42,15 @@ export default function DetailScreen() {
 
   const chart = useAsync(() => getChart(symbol, RANGES[range].range, RANGES[range].interval), [symbol, range]);
   const an = useAsync(() => analyzeStock(symbol), [symbol]);
+  const fundRes = useAsync(() => getFund(symbol), [symbol]);
 
   const meta = chart.data?.meta ?? an.data?.meta;
+  const fscore = useMemo(() => (fundRes.data?.fund ? scoreFund(fundRes.data.fund, meta?.price) : null), [fundRes.data, meta?.price]);
+  const plan = useMemo(() => (an.data ? buildPlan(an.data.daily, an.data.bias, fundRes.data?.fund) : null), [an.data, fundRes.data]);
+  const verdict = useMemo(
+    () => (an.data && !fundRes.loading ? combineVerdict(fscore, an.data.bias, an.data.score, { extended: plan?.extended, rsi: plan?.rsi }) : null),
+    [an.data, fscore, plan, fundRes.loading],
+  );
   const cur = currencySymbol(meta?.currency);
   const series: Pt[] = useMemo(() => chart.data?.candles.map((c) => ({ t: c.t, v: c.c })) ?? [], [chart.data]);
   const first = series[0]?.v ?? 0;
@@ -78,18 +99,20 @@ export default function DetailScreen() {
           </>
         )}
 
-        <View style={{ marginTop: space.l }}>
-          <Segmented
-            value={tab}
-            onChange={setTab}
-            options={[
-              { key: 'overview', label: 'Überblick' },
-              { key: 'analysis', label: 'Analyse' },
-              { key: 'scenarios', label: 'Szenarien' },
-              { key: 'news', label: 'News' },
-            ]}
-          />
-        </View>
+        <VerdictCard verdict={verdict} fund={fscore} bias={an.data?.bias ?? null} loading={an.loading || fundRes.loading} />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.l, marginTop: space.l }} contentContainerStyle={{ paddingHorizontal: space.l, gap: 8 }}>
+          {TABS.map((t) => (
+            <Pressable key={t.key} onPress={() => setTab(t.key)} style={[s.tabChip, tab === t.key && s.tabChipActive]}>
+              <Text style={[s.tabText, tab === t.key && { color: colors.onAccent }]}>{t.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {tab === 'fund' && <FundTab res={fundRes.data} score={fscore} loading={fundRes.loading} />}
+        {tab === 'plan' && (
+          <PlanTab plan={plan} cur={cur} symbol={symbol} defaultCapital={getState().me ? equityOf(getState().me!) : 10000} onDuell={() => nav.navigate('Training', { symbol, ts: Date.now() })} />
+        )}
 
         {tab === 'overview' && (
           <Card style={{ marginTop: space.l }}>
@@ -106,8 +129,8 @@ export default function DetailScreen() {
           </Card>
         )}
 
-        {tab !== 'overview' && an.loading && !an.data && <Loading text="Aktie wird analysiert …" />}
-        {tab !== 'overview' && an.error && !an.data && <ErrorBox text={an.error} onRetry={an.reload} />}
+        {tab !== 'overview' && tab !== 'fund' && an.loading && !an.data && <Loading text="Aktie wird analysiert …" />}
+        {tab !== 'overview' && tab !== 'fund' && an.error && !an.data && <ErrorBox text={an.error} onRetry={an.reload} />}
 
         {tab === 'analysis' && an.data && (
           <>
@@ -217,6 +240,9 @@ const s = StyleSheet.create({
   name: { color: colors.muted, fontSize: 12 },
   price: { color: colors.text, fontSize: 34, fontWeight: '800', marginTop: 4 },
   ranges: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  tabChip: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 9 },
+  tabChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tabText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
   rangeItem: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 99 },
   rangeText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
   muted: { color: colors.muted, fontSize: 12 },

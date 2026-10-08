@@ -1,18 +1,20 @@
+// Farbwelt: Schwarz, Weiß und Grün. Rot und Gelb bleiben nur als Signalfarben für Verlust und Warnung.
 export const colors = {
-  bg: '#0A0E14',
-  card: '#121821',
-  card2: '#18202C',
-  border: '#212B3A',
-  text: '#E8EEF5',
-  muted: '#8392A6',
-  green: '#22C55E',
-  greenBg: 'rgba(34,197,94,0.14)',
-  red: '#F0524F',
-  redBg: 'rgba(240,82,79,0.14)',
-  accent: '#4C8DFF',
-  accentBg: 'rgba(76,141,255,0.14)',
-  amber: '#F5B83D',
-  amberBg: 'rgba(245,184,61,0.14)',
+  bg: '#000000',
+  card: '#0B0F0C',
+  card2: '#141B16',
+  border: '#1F2B23',
+  text: '#FFFFFF',
+  muted: '#92A398',
+  green: '#2BE36F',
+  greenBg: 'rgba(43,227,111,0.15)',
+  red: '#FF5C5C',
+  redBg: 'rgba(255,92,92,0.15)',
+  accent: '#2BE36F',
+  accentBg: 'rgba(43,227,111,0.15)',
+  amber: '#F5C542',
+  amberBg: 'rgba(245,197,66,0.15)',
+  onAccent: '#000000', // Schrift auf grünen Flächen
 };
 
 export const radius = { s: 8, m: 14, l: 20 };

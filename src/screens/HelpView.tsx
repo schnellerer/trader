@@ -32,6 +32,21 @@ const SECTIONS: Sec[] = [
       'Die meisten Aktien fallen mit dem Markt – deshalb ist die Ampel ein wichtiger Hinweis. Ehrlich: Im Backtest hat es dem Langzeit-Bot nicht geholfen, ihn bei Rot ganz auszusetzen (er verpasste die Erholungen). Daher bremst die Ampel den Langzeit-Bot nicht; der Day-Trading-Bot wird bei Rot vorsichtiger.',
   },
   {
+    icon: 'business',
+    title: 'Fundament, Gesamturteil & Trade-Plan',
+    body:
+      'Auf jeder Aktie siehst du oben das Gesamturteil: Fundament (Note A–E) × Chart (bullisch/bärisch).\n\n' +
+      'Fundament-Note (0–100) aus fünf Bereichen:\n' +
+      '• Bewertung (25 %): KGV, PEG, Kurs/Buchwert – ist die Aktie teuer oder günstig?\n' +
+      '• Wachstum (25 %): Umsatz- und Gewinnwachstum, erwartetes Wachstum.\n' +
+      '• Qualität (25 %): Nettomarge, Eigenkapitalrendite, freier Cashflow.\n' +
+      '• Bilanz & Risiko (10 %): Schulden, Liquidität, Beta.\n' +
+      '• Analysten (15 %): Kursziel und Empfehlung.\n\n' +
+      'Gesamturteil: „Starke Kaufidee" nur bei gutem Fundament UND Aufwärtstrend UND vernünftigem Einstiegszeitpunkt. Gutes Fundament + schwacher Chart = „Timing abwarten". Schwaches Fundament + steigender Kurs = „Spekulativ".\n\n' +
+      'Der Trade-Plan nennt Einstieg/Wartezone, Stop-Loss (aus der Schwankung), zwei Ziele und die Stückzahl für dein Risiko. ' +
+      'Wichtig: Die Fundament-Schwellen sind Faustregeln, Branchen unterscheiden sich stark, und sie sind nicht rückblickend getestet (Yahoo liefert keine alten Kennzahlen). Der Backtest belegt nur die Momentum-Regeln.',
+  },
+  {
     icon: 'speedometer',
     title: 'Relative Stärke (RS)',
     body:

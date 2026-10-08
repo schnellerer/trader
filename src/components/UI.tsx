@@ -92,7 +92,7 @@ export const Button = ({ label, onPress, icon, kind = 'primary', disabled }: { l
     disabled={disabled}
     style={[s.btn, kind === 'ghost' && { backgroundColor: colors.card2 }, kind === 'danger' && { backgroundColor: colors.redBg }, disabled && { opacity: 0.5 }]}
   >
-    {icon ? <Ionicons name={icon as any} size={16} color={kind === 'danger' ? colors.red : kind === 'ghost' ? colors.text : '#fff'} style={{ marginRight: 6 }} /> : null}
+    {icon ? <Ionicons name={icon as any} size={16} color={kind === 'danger' ? colors.red : kind === 'ghost' ? colors.text : colors.onAccent} style={{ marginRight: 6 }} /> : null}
     <Text style={[s.btnText, kind === 'danger' && { color: colors.red }, kind === 'ghost' && { color: colors.text }]}>{label}</Text>
   </Pressable>
 );
@@ -121,6 +121,6 @@ const s = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: 32 },
   muted: { color: colors.muted, fontSize: 14 },
   btn: { flexDirection: 'row', backgroundColor: colors.accent, paddingVertical: 11, paddingHorizontal: 18, borderRadius: radius.s + 2, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  btnText: { color: colors.onAccent, fontWeight: '700', fontSize: 14 },
   disclaimer: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: space.xl, marginBottom: space.xl },
 });

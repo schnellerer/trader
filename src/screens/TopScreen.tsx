@@ -56,13 +56,15 @@ export default function TopScreen({ view: viewProp }: { view?: View_ } = {}) {
   // Kaufideen: Aufwärtstrend, gut handelbar, nicht zu wild
   const ideas = useMemo(() => {
     return (items ?? [])
-      .filter((r) => r.score >= 2 && r.bias === 'bullish' && r.aboveSma200 && r.liq !== 'micro' && r.vol < 0.55)
+      // Aufwärtstrend UND – wenn bekannt – solides Fundament (mind. 50 von 100)
+      .filter((r) => r.score >= 2 && r.bias === 'bullish' && r.aboveSma200 && r.liq !== 'micro' && r.vol < 0.55 && (r.fund == null || r.fund >= 50))
       .map((r) => {
         const sc = scenarioFor(r, 30 / 365);
         const sigma30 = r.vol * Math.sqrt(30 / 365);
         const stopPct = Math.min(0.12, Math.max(0.04, sigma30));
         const target = Math.max(sc.bull, stopPct * 1.5);
-        return { r, sc, stopPct, target, rr: target / stopPct, quality: r.rankKey };
+        // Fundament gewichtet die Reihenfolge: Note 80 → ×1,3, Note 40 → ×0,9
+        return { r, sc, stopPct, target, rr: target / stopPct, quality: r.rankKey * (0.5 + (r.fund ?? 50) / 100) };
       })
       .sort((a, b) => b.quality - a.quality)
       .slice(0, 8);
@@ -224,6 +226,12 @@ export default function TopScreen({ view: viewProp }: { view?: View_ } = {}) {
                     <Mini label="Ziel (30 T, bullisch)" value={fmtPct(target, 1)} color={colors.green} />
                     <Mini label="Stop-Loss" value={fmtPct(-stopPct, 1, false)} color={colors.red} />
                     <Mini label="Chance : Risiko" value={`${rr.toFixed(1).replace('.', ',')} : 1`} />
+                    <Mini
+                      label="Fundament"
+                      value={r.fund != null ? `${r.fund >= 75 ? 'A' : r.fund >= 62 ? 'B' : r.fund >= 48 ? 'C' : 'D'} · ${r.fund}/100` : 'keine Daten'}
+                      color={r.fund != null ? (r.fund >= 62 ? colors.green : colors.amber) : undefined}
+                    />
+                    <Mini label="Relative Stärke" value={r.rs != null ? `${r.rs}/99` : '–'} />
                   </View>
                   <Text style={s.explText}>
                     {`Warum: ${r.signals.filter((x) => x.value > 0).slice(0, 3).map((x) => x.text).join('; ')}. `}

@@ -98,7 +98,7 @@ export default function RuleLabScreen() {
               }}
               style={[s.chip, preset === p.key && s.chipActive]}
             >
-              <Text style={[s.chipText, preset === p.key && { color: '#fff' }]}>{p.name}</Text>
+              <Text style={[s.chipText, preset === p.key && { color: colors.onAccent }]}>{p.name}</Text>
             </Pressable>
           ))}
         </ScrollView>

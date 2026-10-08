@@ -71,6 +71,8 @@ export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: Bot
       // Nur gut handelbare Werte (Tagesumsatz > 10 Mio.): Small/Micro-Caps sind zu illiquid und kursspringend für den Bot
       .filter(({ r }) => r.score >= 1 && r.aboveSma200 && r.vol < 0.6 && r.liq !== 'micro' && r.liq !== 'small')
       .filter(({ r }) => r.rs == null || r.rs >= 70)
+      // Schutz vor „Schrott": keine Firmen mit sehr schwachem Fundament (Note < 35 von 100). Im Backtest nicht prüfbar, da es keine historischen Kennzahlen gibt.
+      .filter(({ r }) => r.fund == null || r.fund >= 35)
       .sort((a, b) => (b.r.rs ?? 0) - (a.r.rs ?? 0) || a.rank - b.rank)
       // keine Käufe kurz vor Quartalszahlen (Termin in den nächsten 7 Tagen)
       .filter(({ r }) => {

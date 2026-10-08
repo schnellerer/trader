@@ -6,6 +6,7 @@ const DATA_BASE = RANKING_URL.replace(/ranking\.json$/, '');
 export const SCAN_URL = `${DATA_BASE}scan.json`; // alle ausgewerteten Aktien für den Scanner
 export const BACKTEST_URL = `${DATA_BASE}backtest.json`; // Ergebnisse der Strategie-Tests
 export const TRACK_URL = `${DATA_BASE}track.json`; // Prognose-Zeugnis
+export const FUNDAMENTALS_URL = `${DATA_BASE}fundamentals.json`; // Kennzahlen aller Aktien (Bewertung, Wachstum, Analysten …)
 
 // Stand der Trading-Bots (wird vom GitHub-Server fortlaufend aktualisiert)
 export const BOTS_URL = 'https://raw.githubusercontent.com/schnellerer/trader/data/bots.json';

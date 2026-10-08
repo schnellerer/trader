@@ -33,6 +33,13 @@ export async function fetchScan(force = false): Promise<{ generatedAt: number; r
       sigma: r[ix('sigma')],
       up: r[ix('up')] === 1,
       earnings: r[ix('earnings')] || undefined,
+      fund: ix('fund') >= 0 ? r[ix('fund')] ?? undefined : undefined,
+      pe: ix('pe') >= 0 ? r[ix('pe')] ?? undefined : undefined,
+      revg: ix('revg') >= 0 ? r[ix('revg')] ?? undefined : undefined,
+      margin: ix('margin') >= 0 ? r[ix('margin')] ?? undefined : undefined,
+      upside: ix('upside') >= 0 ? r[ix('upside')] ?? undefined : undefined,
+      div: ix('div') >= 0 ? r[ix('div')] ?? undefined : undefined,
+      sector: ix('sector') >= 0 ? r[ix('sector')] ?? undefined : undefined,
     };
   });
   cache = { t: Date.now(), generatedAt: j.generatedAt, rows };
@@ -51,6 +58,46 @@ export interface Preset {
 const daysTo = (d?: string) => (d ? (Date.parse(`${d}T21:00:00Z`) - Date.now()) / 86400_000 : null);
 
 export const PRESETS: Preset[] = [
+  {
+    key: 'quality',
+    label: 'Qualität & Trend',
+    icon: 'ribbon',
+    desc: 'Die Kombination, die ein Anlagetipp braucht: gutes Unternehmen (Fundament-Note mind. 70 von 100: Bewertung, Wachstum, Qualität, Bilanz, Analysten) UND intakter Aufwärtstrend mit solider Relative Stärke. Nur große und mittlere Werte.',
+    filter: (r) => (r.fund ?? 0) >= 70 && r.up && r.rs >= 50 && (r.liq === 'large' || r.liq === 'mid'),
+    sort: (a, b) => (b.fund ?? 0) - (a.fund ?? 0) || b.rs - a.rs,
+  },
+  {
+    key: 'growth',
+    label: 'Wachstum',
+    icon: 'rocket',
+    desc: 'Umsatz wächst um mehr als 20 %, die Firma verdient dabei Geld (Nettomarge über 10 %) und der Trend zeigt nach oben. Wachstumsaktien sind oft teuer – prüfe die Bewertung im Fundament-Reiter.',
+    filter: (r) => (r.revg ?? 0) > 0.2 && (r.margin ?? 0) > 0.1 && r.up,
+    sort: (a, b) => (b.revg ?? 0) - (a.revg ?? 0),
+  },
+  {
+    key: 'value',
+    label: 'Günstig & solide',
+    icon: 'pricetag',
+    desc: 'Niedriges KGV (unter 18), profitabel (Marge über 8 %) und ordentliches Fundament (mind. 55). Günstig ist nur dann gut, wenn die Firma solide ist – sonst droht eine „Value-Falle".',
+    filter: (r) => r.pe != null && r.pe > 0 && r.pe < 18 && (r.margin ?? 0) > 0.08 && (r.fund ?? 0) >= 55,
+    sort: (a, b) => (a.pe ?? 99) - (b.pe ?? 99),
+  },
+  {
+    key: 'upside',
+    label: 'Kursziel-Potenzial',
+    icon: 'locate',
+    desc: 'Analysten sehen mindestens 25 % Luft bis zum mittleren Kursziel und das Fundament ist mindestens durchschnittlich. Analysten liegen oft daneben – nur ein Zusatzindiz.',
+    filter: (r) => (r.upside ?? 0) >= 0.25 && (r.fund ?? 0) >= 50 && r.liq !== 'micro',
+    sort: (a, b) => (b.upside ?? 0) - (a.upside ?? 0),
+  },
+  {
+    key: 'dividend',
+    label: 'Dividende',
+    icon: 'cash',
+    desc: 'Dividendenrendite ab 3 % bei solidem Fundament (mind. 55) und gut handelbarer Größe. Sehr hohe Renditen (über 8 %) sind oft ein Warnsignal.',
+    filter: (r) => (r.div ?? 0) >= 0.03 && (r.fund ?? 0) >= 55 && (r.liq === 'large' || r.liq === 'mid'),
+    sort: (a, b) => (b.fund ?? 0) - (a.fund ?? 0) || (b.div ?? 0) - (a.div ?? 0),
+  },
   {
     key: 'breakout',
     label: 'Ausbruch',

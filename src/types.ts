@@ -85,6 +85,7 @@ export interface RankItem {
   dollarVol?: number;
   rs?: number; // Relative Stärke 1-99 gegenüber allen ausgewerteten Aktien
   earnings?: string; // nächster Quartalszahlen-Termin (YYYY-MM-DD)
+  fund?: number; // Fundamental-Score 0–100 (nur Server-Ranking)
 }
 
 /** Zeile aus data/scan.json (alle ausgewerteten Aktien, kompakt) */
@@ -105,6 +106,13 @@ export interface ScanRow {
   sigma: number; // Schwankung p.a.
   up: boolean; // über der 200-Tage-Linie
   earnings?: string;
+  fund?: number; // Fundamental-Score 0–100
+  pe?: number; // KGV (erwartet, sonst aktuell)
+  revg?: number; // Umsatzwachstum
+  margin?: number; // Nettomarge
+  upside?: number; // Abstand zum Analysten-Kursziel
+  div?: number; // Dividendenrendite
+  sector?: string;
 }
 
 export interface RankingMeta {

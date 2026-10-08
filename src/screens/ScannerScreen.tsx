@@ -56,8 +56,8 @@ export default function ScannerScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -space.l }} contentContainerStyle={{ paddingHorizontal: space.l, gap: 8 }}>
           {PRESETS.map((x) => (
             <Pressable key={x.key} onPress={() => setPreset(x.key)} style={[s.chip, preset === x.key && s.chipActive]}>
-              <Ionicons name={x.icon as any} size={14} color={preset === x.key ? '#fff' : colors.muted} />
-              <Text style={[s.chipText, preset === x.key && { color: '#fff' }]}>{x.label}</Text>
+              <Ionicons name={x.icon as any} size={14} color={preset === x.key ? colors.onAccent : colors.muted} />
+              <Text style={[s.chipText, preset === x.key && { color: colors.onAccent }]}>{x.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -99,6 +99,8 @@ export default function ScannerScreen() {
   );
 }
 
+const gradeOf = (t: number) => (t >= 75 ? 'A' : t >= 62 ? 'B' : t >= 48 ? 'C' : t >= 35 ? 'D' : 'E');
+
 function Row({ r, onPress }: { r: ScanRow; onPress: () => void }) {
   const rsColor = r.rs >= 90 ? colors.green : r.rs >= 70 ? colors.accent : colors.muted;
   return (
@@ -127,8 +129,17 @@ function Row({ r, onPress }: { r: ScanRow; onPress: () => void }) {
             <PctText v={r.m6} digits={0} style={{ fontSize: 13 }} />
           </View>
         </View>
+        {r.fund != null ? (
+          <View style={[s.stats, { marginTop: 8 }]}>
+            <Stat label="Fundament" value={`${gradeOf(r.fund)} · ${r.fund}`} color={r.fund >= 62 ? colors.green : r.fund >= 48 ? colors.amber : colors.red} />
+            <Stat label="KGV" value={r.pe != null ? fmtNum(r.pe, 1) : '–'} />
+            <Stat label="Umsatz-Wachstum" value={r.revg != null ? `${fmtNum(r.revg * 100, 0)} %` : '–'} />
+            <Stat label="Kursziel" value={r.upside != null ? `${r.upside >= 0 ? '+' : ''}${fmtNum(r.upside * 100, 0)} %` : '–'} color={r.upside != null ? (r.upside > 0.1 ? colors.green : r.upside < 0 ? colors.red : undefined) : undefined} />
+          </View>
+        ) : null}
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
           <Tag text={r.liq === 'large' ? 'Groß' : r.liq === 'mid' ? 'Mittel' : r.liq === 'small' ? 'Klein' : 'Micro'} />
+          {r.sector ? <Tag text={r.sector} /> : null}
           {r.up ? <Tag text="über 200-Tage-Linie" good /> : <Tag text="unter 200-Tage-Linie" bad />}
           {r.earnings ? <Tag text={`Zahlen ${r.earnings.slice(5).split('-').reverse().join('.')}.`} warn /> : null}
         </View>
