@@ -47,6 +47,15 @@ const SECTIONS: Sec[] = [
       'Wichtig: Die Fundament-Schwellen sind Faustregeln, Branchen unterscheiden sich stark, und sie sind nicht rückblickend getestet (Yahoo liefert keine alten Kennzahlen). Der Backtest belegt nur die Momentum-Regeln.',
   },
   {
+    icon: 'cash',
+    title: 'Dividenden',
+    body:
+      'Entdecken → Dividenden zeigt die Top-Dividendenwerte, sortierbar nach Rendite, Sicherheit, Wachstum und Jahren ohne Kürzung. Auf jeder Aktie gibt es den Reiter „Dividende" mit Rendite, Ex-Tag, Verlauf der letzten Jahre und einem Netto-Rechner (nach deutscher Abgeltungsteuer).\n\n' +
+      'Die Sicherheits-Note (0–100) bewertet: Ausschüttungsquote (wie viel vom Gewinn wird verteilt?), Jahre ohne Kürzung, Dividendenwachstum, Cashflow und Fundament der Firma.\n\n' +
+      '„Dividendenfalle": Eine sehr hohe Rendite (über 7–8 %) entsteht oft, weil der Kurs gefallen ist – der Markt erwartet eine Kürzung. Warnzeichen: Ausschüttungsquote über 100 %, frühere Kürzung, negativer Cashflow.\n\n' +
+      'Grenzen: Sonderdividenden (einmalige Zahlungen) verzerren die Rendite, bei Immobilien-Firmen (REITs) ist die Quote nach Gewinn nicht aussagekräftig, und Dividenden sind nie garantiert. Die Note ist eine Faustregel, nicht rückblickend getestet. Bei US-Aktien kommt zur deutschen Steuer oft eine Quellensteuer von 15 % hinzu.',
+  },
+  {
     icon: 'options',
     title: 'Risiko-Regler (0–100 %)',
     body:

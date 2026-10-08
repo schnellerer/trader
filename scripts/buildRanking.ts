@@ -8,7 +8,8 @@
  *   LIMIT=100 npx tsx scripts/buildRanking.ts  (Test mit 100 Aktien)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { getChart, pool } from '../src/api/yahoo';
+import { getChart, getDividends, pool } from '../src/api/yahoo';
+import { DivQuality, divQuality, DivStats, divStats } from '../src/analysis/dividends';
 import { DE_STOCKS } from '../src/analysis/universe';
 import { pctChange, rsi, sma } from '../src/analysis/indicators';
 import { assessBias, biasLabel, driftStats, expectedReturn } from '../src/analysis/model';
@@ -178,6 +179,19 @@ async function main() {
   }
   const fundOf = (s: string) => fundScore.get(s)?.total;
 
+  // Dividenden: Historie (10 Jahre), Wachstum, Serie ohne Kürzung und Sicherheit für alle Zahler
+  const divInfo = new Map<string, { st: DivStats; q: DivQuality }>();
+  {
+    const payers = withRs.filter((x) => (fundMap.get(x.symbol)?.div ?? 0) > 0.005);
+    console.log(`Hole Dividendenhistorie für ${payers.length} Aktien …`);
+    await pool(payers, 4, async (x) => {
+      const f = fundMap.get(x.symbol)!;
+      const st = divStats(await getDividends(x.symbol));
+      divInfo.set(x.symbol, { st, q: divQuality(f, st, fundOf(x.symbol)) });
+    });
+    console.log(`Dividendendaten: ${divInfo.size} Aktien`);
+  }
+
   // Pro Liquiditätsklasse die besten 60 behalten (hält die Datei klein)
   const classes: Liq[] = ['large', 'mid', 'small', 'micro'];
   const keep = classes
@@ -212,6 +226,15 @@ async function main() {
     fundScore.get(x.symbol)?.upside != null ? r4(fundScore.get(x.symbol)!.upside!) : null,
     fundMap.get(x.symbol)?.div ?? null,
     fundMap.get(x.symbol)?.sec ?? null,
+    fundMap.get(x.symbol)?.pay ?? null,
+    divInfo.get(x.symbol)?.st.cagr != null ? r4(divInfo.get(x.symbol)!.st.cagr!) : null,
+    divInfo.get(x.symbol)?.st.streak ?? null,
+    divInfo.get(x.symbol)?.st.cutYear ?? null,
+    divInfo.get(x.symbol)?.q.score ?? null,
+    divInfo.get(x.symbol) ? (divInfo.get(x.symbol)!.q.trap ? 1 : 0) : null,
+    fundMap.get(x.symbol)?.exd ?? null,
+    fundMap.get(x.symbol)?.dr != null ? Math.round(fundMap.get(x.symbol)!.dr! * 1000) / 1000 : null,
+    divInfo.get(x.symbol)?.st.perYear ?? null,
   ]);
 
   mkdirSync('data', { recursive: true });
@@ -220,7 +243,7 @@ async function main() {
     'data/scan.json',
     JSON.stringify({
       generatedAt: Date.now(),
-      fields: ['symbol', 'name', 'liq', 'price', 'currency', 'rs', 'rsi', 'hi52', 'vol', 'm1', 'm6', 'm12', 'score', 'sigma', 'up', 'earnings', 'fund', 'pe', 'revg', 'margin', 'upside', 'div', 'sector'],
+      fields: ['symbol', 'name', 'liq', 'price', 'currency', 'rs', 'rsi', 'hi52', 'vol', 'm1', 'm6', 'm12', 'score', 'sigma', 'up', 'earnings', 'fund', 'pe', 'revg', 'margin', 'upside', 'div', 'sector', 'payout', 'dgr', 'dstreak', 'dcut', 'dq', 'dtrap', 'exd', 'drate', 'dper'],
       rows: scan,
     }),
   );

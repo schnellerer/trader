@@ -8,6 +8,7 @@ import { getFund } from '../analysis/fundData';
 import { combineVerdict, scoreFund } from '../analysis/fundamental';
 import { buildPlan } from '../analysis/tradePlan';
 import { equityOf } from '../bots/sim';
+import DividendPanel from '../components/DividendPanel';
 import { FundTab, PlanTab, VerdictCard } from '../components/StockPanels';
 import { biasLabel, horizonLabel } from '../analysis/model';
 import { getChart, RANGES, RangeKey } from '../api/yahoo';
@@ -19,11 +20,12 @@ import { useAsync } from '../hooks';
 import { getState, toggleWatch, useStore } from '../store';
 import { colors, signColor, space } from '../theme';
 
-type Tab = 'overview' | 'fund' | 'plan' | 'analysis' | 'scenarios' | 'news';
+type Tab = 'overview' | 'fund' | 'dividend' | 'plan' | 'analysis' | 'scenarios' | 'news';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'overview', label: 'Überblick' },
   { key: 'fund', label: 'Fundament' },
+  { key: 'dividend', label: 'Dividende' },
   { key: 'plan', label: 'Trade-Plan' },
   { key: 'analysis', label: 'Chart' },
   { key: 'scenarios', label: 'Szenarien' },
@@ -32,10 +34,10 @@ const TABS: { key: Tab; label: string }[] = [
 
 export default function DetailScreen() {
   const nav = useNavigation<any>();
-  const { symbol } = useRoute<any>().params;
+  const { symbol, tab: startTab } = useRoute<any>().params;
   const insets = useSafeAreaInsets();
   const watched = useStore((s) => s.watchlist.includes(symbol));
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>((startTab as Tab) ?? 'overview');
   const [range, setRange] = useState<RangeKey>('1J');
   const [scrub, setScrub] = useState<Pt | null>(null);
   const [horizon, setHorizon] = useState(30 / 365);
@@ -110,6 +112,7 @@ export default function DetailScreen() {
         </ScrollView>
 
         {tab === 'fund' && <FundTab res={fundRes.data} score={fscore} loading={fundRes.loading} />}
+        {tab === 'dividend' && (fundRes.loading && !fundRes.data ? <Loading text="Kennzahlen werden geladen …" /> : <DividendPanel symbol={symbol} fund={fundRes.data?.fund ?? null} fundScore={fscore?.total ?? null} cur={cur || '$'} price={meta?.price} />)}
         {tab === 'plan' && (
           <PlanTab plan={plan} cur={cur} symbol={symbol} defaultCapital={getState().me ? equityOf(getState().me!) : 10000} onDuell={() => nav.navigate('Training', { symbol, ts: Date.now() })} />
         )}

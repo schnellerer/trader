@@ -1,4 +1,5 @@
 import { analyzeCoach, weekSummary } from '../src/analysis/coach';
+import { divQuality, divStats } from '../src/analysis/dividends';
 import { luckTest } from '../src/analysis/luck';
 import { assessBias, buildScenarios, driftStats, expectedReturn, scenarioFor } from '../src/analysis/model';
 import { combineVerdict, scoreFund } from '../src/analysis/fundamental';
@@ -95,6 +96,29 @@ const finite = (o: unknown) => !JSON.stringify(o, (_k, v) => (typeof v === 'numb
   ok('Risiko 0 → nichts investierbar', dayRisk(0).maxInvested === 0 && longRisk(0).maxInvested === 0 && goldRisk(0).maxInvested === 0);
   ok('Werte außerhalb 0–100 werden begrenzt', dayRisk(250).share === dayRisk(100).share && dayRisk(-5).share === dayRisk(0).share);
   ok('Beschreibung für alle Bots', ['day', 'long', 'gold'].every((k) => describeRisk(k as any, 73).lines.length > 0));
+}
+
+// ---- Dividenden ----
+{
+  const day = 86400_000;
+  const mk = (y: number, m: number, amount: number) => ({ t: Date.UTC(y, m, 15), amount });
+  const now = Date.UTC(2026, 6, 1);
+  const steady = [2019, 2020, 2021, 2022, 2023, 2024, 2025].flatMap((y, i) => [mk(y, 2, 0.5 + i * 0.05), mk(y, 5, 0.5 + i * 0.05), mk(y, 8, 0.5 + i * 0.05), mk(y, 11, 0.5 + i * 0.05)]);
+  const st = divStats(steady, now);
+  ok('Dividenden: stetige Steigerung wird erkannt', st.streak >= 5 && st.raises >= 4 && (st.cagr ?? 0) > 0.04 && !st.cut && st.cutYear === null, `Serie ${st.streak}, ${st.raises}↑, ${((st.cagr ?? 0) * 100).toFixed(1)} %`);
+  ok('Dividenden: vierteljährliche Zahlung erkannt', st.perYear === 4, String(st.perYear));
+  const cutEv = [2019, 2020, 2021, 2022, 2023, 2024, 2025].flatMap((y) => (y < 2023 ? [mk(y, 2, 1), mk(y, 8, 1)] : [mk(y, 2, 0.4), mk(y, 8, 0.4)]));
+  const sc = divStats(cutEv, now);
+  ok('Dividenden: Kürzung wird mit Jahr erkannt', sc.cutYear === 2023, String(sc.cutYear));
+  ok('Dividenden: leere Historie ohne Absturz', finite(divStats([], now)));
+  const good = divQuality({ div: 0.03, pay: 0.5, fcf: 5e9, sec: 'Consumer' }, st, 80);
+  ok('Sicherheit: stabiler Zahler ist sicher', good.score >= 80 && !good.trap, `${good.score} ${good.label}`);
+  const trap = divQuality({ div: 0.12, pay: 1.4, fcf: -1e8, sec: 'Energy' }, sc, 35);
+  ok('Sicherheit: 12 % Rendite + Quote 140 % + Kürzung = Falle', trap.trap && trap.level === 'bad', `${trap.score} ${trap.label}`);
+  const reit = divQuality({ div: 0.06, pay: 2.3, fcf: 1e9, sec: 'Real Estate', ind: 'REIT - Retail' }, st, 60);
+  ok('Sicherheit: REIT mit Quote 230 % wird nicht automatisch zur Falle', !reit.trap, `${reit.score}`);
+  ok('Sicherheit: Wert bleibt zwischen 0 und 100', [good, trap, reit].every((q) => q.score >= 0 && q.score <= 100));
+  void day;
 }
 
 // ---- Formatierung ----

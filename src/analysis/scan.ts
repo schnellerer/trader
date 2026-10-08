@@ -4,6 +4,8 @@ import { ScanRow } from '../types';
 
 let cache: { t: number; generatedAt: number; rows: ScanRow[] } | null = null;
 
+const opt = (r: any[], i: number): number | undefined => (i >= 0 && r[i] != null ? r[i] : undefined);
+
 /** Lädt die täglich berechnete Liste aller ausgewerteten Aktien (~4.000) vom Server */
 export async function fetchScan(force = false): Promise<{ generatedAt: number; rows: ScanRow[] }> {
   if (!force && cache && Date.now() - cache.t < 30 * 60_000) return cache;
@@ -40,6 +42,15 @@ export async function fetchScan(force = false): Promise<{ generatedAt: number; r
       upside: ix('upside') >= 0 ? r[ix('upside')] ?? undefined : undefined,
       div: ix('div') >= 0 ? r[ix('div')] ?? undefined : undefined,
       sector: ix('sector') >= 0 ? r[ix('sector')] ?? undefined : undefined,
+      payout: opt(r, ix('payout')),
+      dgr: opt(r, ix('dgr')),
+      dstreak: opt(r, ix('dstreak')),
+      dcut: opt(r, ix('dcut')),
+      dq: opt(r, ix('dq')),
+      dtrap: ix('dtrap') >= 0 && r[ix('dtrap')] != null ? r[ix('dtrap')] === 1 : undefined,
+      exd: opt(r, ix('exd')),
+      drate: opt(r, ix('drate')),
+      dper: opt(r, ix('dper')),
     };
   });
   cache = { t: Date.now(), generatedAt: j.generatedAt, rows };
@@ -94,9 +105,9 @@ export const PRESETS: Preset[] = [
     key: 'dividend',
     label: 'Dividende',
     icon: 'cash',
-    desc: 'Dividendenrendite ab 3 % bei solidem Fundament (mind. 55) und gut handelbarer Größe. Sehr hohe Renditen (über 8 %) sind oft ein Warnsignal.',
-    filter: (r) => (r.div ?? 0) >= 0.03 && (r.fund ?? 0) >= 55 && (r.liq === 'large' || r.liq === 'mid'),
-    sort: (a, b) => (b.fund ?? 0) - (a.fund ?? 0) || (b.div ?? 0) - (a.div ?? 0),
+    desc: 'Dividendenrendite ab 3 % bei sicherer Dividende (Sicherheits-Note mind. 65, keine „Dividendenfalle") und gut handelbarer Größe. Mehr dazu im Reiter „Dividenden".',
+    filter: (r) => (r.div ?? 0) >= 0.03 && (r.dq ?? 0) >= 65 && !r.dtrap && (r.liq === 'large' || r.liq === 'mid'),
+    sort: (a, b) => (b.dq ?? 0) - (a.dq ?? 0) || (b.div ?? 0) - (a.div ?? 0),
   },
   {
     key: 'breakout',

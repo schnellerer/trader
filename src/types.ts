@@ -113,6 +113,15 @@ export interface ScanRow {
   upside?: number; // Abstand zum Analysten-Kursziel
   div?: number; // Dividendenrendite
   sector?: string;
+  payout?: number; // Ausschüttungsquote
+  dgr?: number; // Dividendenwachstum p.a. (ca. 5 Jahre)
+  dstreak?: number; // Jahre in Folge ohne Kürzung
+  dcut?: number; // Jahr der letzten Kürzung (falls in den letzten 6 Jahren)
+  dq?: number; // Dividenden-Sicherheit 0–100
+  dtrap?: boolean; // Verdacht auf „Dividendenfalle"
+  exd?: number; // Ex-Dividenden-Tag (Unix-Sekunden)
+  drate?: number; // Jahresdividende je Aktie (Kurswährung)
+  dper?: number; // Zahlungen pro Jahr
 }
 
 export interface RankingMeta {

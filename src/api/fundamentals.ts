@@ -32,9 +32,13 @@ export interface Fund {
   ind?: string;
   price?: number;
   cur?: string;
+  dr?: number; // jährliche Dividende je Aktie (in Kurswährung)
+  exd?: number; // nächster/letzter Ex-Dividenden-Tag (Unix-Sekunden)
+  dy5?: number; // durchschnittliche Dividendenrendite der letzten 5 Jahre (0.03 = 3 %)
 }
 
-export const FUND_FIELDS: (keyof Fund)[] = ['pe', 'fpe', 'peg', 'pb', 'ps', 'rev', 'eg', 'epsNext', 'mar', 'opm', 'roe', 'de', 'cr', 'fcf', 'mcap', 'div', 'pay', 'beta', 'tgt', 'tlo', 'thi', 'rec', 'na', 'sec', 'ind', 'price', 'cur'];
+// Neue Felder immer hinten anhängen: ältere Dateien mit kürzeren Zeilen bleiben lesbar
+export const FUND_FIELDS: (keyof Fund)[] = ['pe', 'fpe', 'peg', 'pb', 'ps', 'rev', 'eg', 'epsNext', 'mar', 'opm', 'roe', 'de', 'cr', 'fcf', 'mcap', 'div', 'pay', 'beta', 'tgt', 'tlo', 'thi', 'rec', 'na', 'sec', 'ind', 'price', 'cur', 'dr', 'exd', 'dy5'];
 
 let session: { cookie: string; crumb: string; t: number } | null = null;
 
@@ -103,9 +107,12 @@ export async function fetchFundamentals(symbol: string, retried = false): Promis
     ind: r.assetProfile?.industry,
     price: raw(fd.currentPrice) ?? raw(r.price?.regularMarketPrice),
     cur: r.price?.currency ?? fd.financialCurrency,
+    dr: raw(sd.dividendRate) ?? raw(sd.trailingAnnualDividendRate),
+    exd: raw(sd.exDividendDate),
+    dy5: raw(sd.fiveYearAvgDividendYield) != null ? raw(sd.fiveYearAvgDividendYield)! / 100 : undefined, // Yahoo liefert Prozentzahlen
   };
   // leere Ergebnisse (z. B. ETFs, Indizes) als „keine Daten" behandeln
-  const has = FUND_FIELDS.some((k) => k !== 'sec' && k !== 'ind' && k !== 'price' && k !== 'cur' && f[k] != null);
+  const has = FUND_FIELDS.some((k) => k !== 'sec' && k !== 'ind' && k !== 'price' && k !== 'cur' && k !== 'dr' && k !== 'exd' && k !== 'dy5' && f[k] != null);
   return has ? f : null;
 }
 

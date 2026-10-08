@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Bias } from '../types';
@@ -60,7 +60,20 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
   );
 }
 
-export const Stat = ({ label, value, color }: { label: string; value: string; color?: string }) => (
+/** Waagerecht scrollbare Reiter (wenn mehr Punkte da sind, als in eine Zeile passen) */
+export function ChipTabs<T extends string>({ options, value, onChange }: { options: { key: T; label: string }[]; value: T; onChange: (k: T) => void }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      {options.map((o) => (
+        <Pressable key={o.key} onPress={() => onChange(o.key)} style={[s.tabChip, value === o.key && s.tabChipActive]}>
+          <Text style={[s.tabChipText, value === o.key && { color: colors.onAccent }]}>{o.label}</Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+}
+
+export const Stat =({ label, value, color }: { label: string; value: string; color?: string }) => (
   <View style={{ flex: 1, minWidth: '45%', paddingVertical: 6 }}>
     <Text style={s.statLabel}>{label}</Text>
     <Text style={[s.statValue, color ? { color } : null]}>{value}</Text>
@@ -116,6 +129,9 @@ const s = StyleSheet.create({
   segItem: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: radius.s },
   segActive: { backgroundColor: colors.card2 },
   segText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  tabChip: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 9 },
+  tabChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  tabChipText: { color: colors.muted, fontWeight: '700', fontSize: 13 },
   statLabel: { color: colors.muted, fontSize: 12 },
   statValue: { color: colors.text, fontSize: 16, fontWeight: '600', marginTop: 2 },
   center: { alignItems: 'center', justifyContent: 'center', padding: 32 },

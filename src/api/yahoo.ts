@@ -75,6 +75,23 @@ export async function getChart(symbol: string, range: string, interval: string, 
   };
 }
 
+export interface DividendEvent {
+  t: number; // ms
+  amount: number; // je Aktie, Kurswährung
+}
+
+/** Dividendenzahlungen der letzten Jahre (Ex-Dividenden-Tage) */
+export async function getDividends(symbol: string, range = '10y', ttlMs = 3600_000): Promise<DividendEvent[]> {
+  const url = `${BASE}/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=1mo&events=div`;
+  const j = await getJson(url, ttlMs);
+  const ev = j?.chart?.result?.[0]?.events?.dividends;
+  if (!ev) return [];
+  return Object.values(ev as Record<string, any>)
+    .map((e: any) => ({ t: e.date * 1000, amount: e.amount as number }))
+    .filter((e) => isFinite(e.amount) && e.amount > 0)
+    .sort((a, b) => a.t - b.t);
+}
+
 let fxCache: { t: number; rate: number } | null = null;
 /** EUR→USD Kurs (1 EUR = x USD) */
 export async function getEurUsd(): Promise<number> {
