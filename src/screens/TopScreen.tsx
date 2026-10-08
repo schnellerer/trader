@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { scenario30 } from '../analysis/model';
 import { getRanking, rankingMeta } from '../analysis/ranking';
 import { BiasBadge, Card, Disclaimer, ErrorBox, Loading, Screen, Segmented } from '../components/UI';
 import { fmtDateTime, fmtPct } from '../format';
@@ -36,7 +37,7 @@ export default function TopScreen() {
   const top = (items ?? []).filter((x) => filter === 'all' || x.liq === filter).slice(0, 10);
 
   return (
-    <Screen title="Top 10" subtitle="Höchste erwartete Rendite (12 Monate, Basisszenario)">
+    <Screen title="Top 10" subtitle="Höchste erwartete Rendite (30 Tage, Basisszenario)">
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 40 }}
         refreshControl={
@@ -89,6 +90,7 @@ export default function TopScreen() {
 
         {top.map((r, i) => {
           const isOpen = open === r.symbol;
+          const sc = scenario30(r.expected, r.vol);
           return (
             <Card key={r.symbol} style={{ marginBottom: 10 }}>
               <Pressable onPress={() => setOpen(isOpen ? null : r.symbol)}>
@@ -101,8 +103,8 @@ export default function TopScreen() {
                     <Text style={s.muted} numberOfLines={1}>{r.name}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[s.exp, { color: signColor(r.expected) }]}>{fmtPct(r.expected)}</Text>
-                    <Text style={s.muted}>erwartet / 12 Mon.</Text>
+                    <Text style={[s.exp, { color: signColor(sc.base) }]}>{fmtPct(sc.base)}</Text>
+                    <Text style={s.muted}>Basis / 30 Tage</Text>
                   </View>
                 </View>
                 <View style={[s.row, { marginTop: 10 }]}>
@@ -115,7 +117,10 @@ export default function TopScreen() {
               </Pressable>
               {isOpen && (
                 <View style={s.expl}>
-                  <Text style={s.explText}>{r.explanation}</Text>
+                  <Text style={s.explText}>
+                    {`30-Tage-Szenarien: Bullisch ${fmtPct(sc.bull)} · Basis ${fmtPct(sc.base)} · Bärisch ${fmtPct(sc.bear)}.\n`}
+                    {r.explanation}
+                  </Text>
                   <Pressable onPress={() => nav.navigate('Detail', { symbol: r.symbol })} style={s.link}>
                     <Text style={s.linkText}>Volle Analyse & Szenarien öffnen</Text>
                     <Ionicons name="arrow-forward" size={14} color={colors.accent} />

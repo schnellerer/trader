@@ -89,4 +89,12 @@ export function buildScenarios(stats: DriftStats, score: number): Scenario[] {
   });
 }
 
+/** Basis-/Bull-/Bear-Szenario für 30 Tage aus erwarteter Jahresrendite und Volatilität */
+export function scenario30(expectedYear: number, vol: number) {
+  const T = 30 / 365;
+  const m = (expectedYear - (vol * vol) / 2) * T;
+  const s = vol * Math.sqrt(T);
+  return { bull: Math.exp(m + s) - 1, base: Math.exp(m) - 1, bear: Math.exp(m - s) - 1 };
+}
+
 export const biasLabel = (b: Bias) => (b === 'bullish' ? 'Bullisch' : b === 'bearish' ? 'Bärisch' : 'Neutral');
