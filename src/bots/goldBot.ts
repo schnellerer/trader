@@ -2,6 +2,7 @@ import { getChart, toEur } from '../api/yahoo';
 import { atrAt, ema, rsiAt } from '../analysis/indicators';
 import { fmtNum, fmtPct } from '../format';
 import { BotState, Candle } from '../types';
+import { DEFAULT_RISK, goldRisk } from './risk';
 import { buy, clone, closePosition, equityOf, finish, isShort, openShort, posPct } from './sim';
 
 export const GOLD_SYMBOL = 'GC=F'; // Gold-Future (COMEX), folgt dem XAU/USD-Spotpreis eng
@@ -72,7 +73,8 @@ export function goldEntry(g: GoldSeries, n: number): GoldSignal | null {
  * Risiko: Stop-Loss 2,5 × ATR, Ziel 5 × ATR, Positionsgröße so, dass max. 1 % des Depots riskiert wird, kein Hebel.
  * Ausstieg zusätzlich bei Trendwechsel (EMA-Kreuzung) oder nach 8 Stunden.
  */
-export async function stepGoldBot(prev: BotState): Promise<BotState> {
+export async function stepGoldBot(prev: BotState, riskPct: number = DEFAULT_RISK): Promise<BotState> {
+  const rk = goldRisk(riskPct); // Risiko-Regler (0–100 %, 50 = Standard)
   const d = await getChart(GOLD_SYMBOL, '10d', '5m', 0);
   const cs = d.candles;
   if (cs.length < 220) throw new Error('Zu wenig Gold-Kursdaten');
@@ -134,10 +136,10 @@ export async function stepGoldBot(prev: BotState): Promise<BotState> {
           : `Breakout-Strategie (Short): Kurs bricht unter das 12-Stunden-Tief (${fmtNum(sig.level! * fx)} €) im Abwärtstrend (EMA 20 < 50 < 200), RSI ${rs}, Haupt-Handelszeit.`;
       const stopDist = GOLD.STOP_ATR * aEur;
       const eq = equityOf(b);
-      const qty = Math.min((eq * GOLD.RISK_PER_TRADE) / stopDist, (eq * 0.95) / price);
+      const qty = Math.min((eq * rk.riskPerTrade) / stopDist, (eq * 0.95 * rk.maxInvested) / price);
       const amount = qty * price;
-      why += ` Stop-Loss ${fmtNum(price - dir * stopDist)} €, Ziel ${fmtNum(price + dir * GOLD.TARGET_ATR * aEur)} €, Risiko ${fmtPct(GOLD.RISK_PER_TRADE, 0, false)} des Depots, ATR ${fmtNum(aEur)} €.`;
-      const ok = dir === 1 ? buy(b, GOLD_SYMBOL, NAME, price, amount, why, GOLD.FEE) : openShort(b, GOLD_SYMBOL, NAME, price, amount, why, GOLD.FEE);
+      why += ` Stop-Loss ${fmtNum(price - dir * stopDist)} €, Ziel ${fmtNum(price + dir * GOLD.TARGET_ATR * aEur)} €, Risiko ${fmtPct(rk.riskPerTrade, 2, false)} des Depots (Risiko-Regler ${Math.round(riskPct)} %), ATR ${fmtNum(aEur)} €.`;
+      const ok = rk.maxInvested > 0 && (dir === 1 ? buy(b, GOLD_SYMBOL, NAME, price, amount, why, GOLD.FEE) : openShort(b, GOLD_SYMBOL, NAME, price, amount, why, GOLD.FEE));
       if (ok) {
         const p = b.positions[0];
         p.stop = price - dir * stopDist;

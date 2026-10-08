@@ -9,6 +9,7 @@ export interface BotsFile {
   long: BotState;
   gold?: BotState; // fehlt in älteren Dateien
   regime?: Regime; // Marktampel zum Zeitpunkt des letzten Laufs
+  settings?: { day: number; long: number; gold: number }; // Risiko-Regler (50 = Standard)
 }
 
 async function get(url: string, headers: Record<string, string> = {}): Promise<{ status: number; data: BotsFile | null }> {

@@ -4,6 +4,7 @@ import { Regime } from '../analysis/regime';
 export interface BotCtx {
   regime?: Regime;
   earnings?: Record<string, string>; // Symbol → Termin (YYYY-MM-DD)
+  risk?: { day?: number; long?: number; gold?: number }; // Risiko-Regler je Bot (0–100, 50 = Standard)
 }
 
 /** Tage bis zu den nächsten Quartalszahlen (null = unbekannt/keine in den nächsten 2 Wochen). Negativ = gestern/heute schon gemeldet. */

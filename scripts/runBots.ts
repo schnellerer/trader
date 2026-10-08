@@ -1,6 +1,6 @@
 /**
  * Handelsdurchgang der Papertrading-Bots auf dem GitHub-Server.
- *   MODE=auto | day | long | gold | all | reset    (reset: Bots mit START_CAPITAL neu starten)
+ *   MODE=auto | day | long | gold | all | reset | settings   (reset: Bots mit START_CAPITAL neu starten; settings: Risiko-Regler aus RISK_DAY/RISK_LONG/RISK_GOLD setzen)
  *   DATA_DIR=<Ordner mit bots.json>   (Standard: ./botdata)
  *   START_CAPITAL=10000
  *   NTFY_TOPIC=<geheimer Name>        (optional: Handy-Benachrichtigungen über ntfy.sh)
@@ -11,6 +11,7 @@ import { BotCtx } from '../src/bots/ctx';
 import { stepDayBot } from '../src/bots/dayBot';
 import { stepGoldBot } from '../src/bots/goldBot';
 import { stepLongBot } from '../src/bots/longBot';
+import { clampRisk, DEFAULT_RISK } from '../src/bots/risk';
 import { newBot } from '../src/bots/sim';
 import { toRankItems } from '../src/analysis/rankingData';
 import { BotState } from '../src/types';
@@ -24,6 +25,7 @@ interface BotsFile {
   gold: BotState;
   regime?: Regime;
   regimeAt?: number;
+  settings?: { day: number; long: number; gold: number }; // Risiko-Regler 0–100 je Bot (50 = Standard)
 }
 
 const dir = process.env.DATA_DIR || 'botdata';
@@ -61,9 +63,19 @@ async function main() {
 
   if (mode === 'reset') {
     if (!isFinite(capital) || capital < 100) throw new Error('Ungültiges Startkapital');
-    data = { updatedAt: Date.now(), startCapital: capital, day: newBot(capital), long: newBot(capital), gold: newBot(capital) };
+    data = { updatedAt: Date.now(), startCapital: capital, day: newBot(capital), long: newBot(capital), gold: newBot(capital), settings: data.settings }; // Regler bleiben erhalten
     save(data);
     console.log(`Bots mit ${capital} € neu gestartet.`);
+    return;
+  }
+
+  if (mode === 'settings') {
+    const cur = data.settings ?? { day: DEFAULT_RISK, long: DEFAULT_RISK, gold: DEFAULT_RISK };
+    const pick = (v: string | undefined, old: number) => (v != null && v.trim() !== '' && isFinite(Number(v)) ? clampRisk(Number(v)) : old);
+    data.settings = { day: pick(process.env.RISK_DAY, cur.day), long: pick(process.env.RISK_LONG, cur.long), gold: pick(process.env.RISK_GOLD, cur.gold) };
+    save(data);
+    console.log('Risiko-Regler gesetzt:', JSON.stringify(data.settings));
+    await notify('Risiko-Regler geändert', `Day-Trading ${data.settings.day} % · Langzeit ${data.settings.long} % · Gold ${data.settings.gold} %`, 2);
     return;
   }
 
@@ -75,7 +87,7 @@ async function main() {
   const runLong = all || mode === 'long' || (mode === 'auto' && (hour === 15 || hour === 23) && age(data.long) > 6 * 3600_000);
 
   // Marktampel (alle 10 Minuten neu berechnen) und Quartalszahlen-Termine
-  const ctx: BotCtx = {};
+  const ctx: BotCtx = { risk: data.settings };
   try {
     if (!data.regime || Date.now() - (data.regimeAt ?? 0) > 10 * 60_000) {
       const old = data.regime?.state;
@@ -99,7 +111,7 @@ async function main() {
   if (runGold) {
     try {
       const before = data.gold;
-      data.gold = await stepGoldBot(data.gold);
+      data.gold = await stepGoldBot(data.gold, data.settings?.gold ?? DEFAULT_RISK);
       console.log('Gold-Bot:', data.gold.lastLog);
       await tell('Gold-Bot', before, data.gold);
     } catch (e: any) {

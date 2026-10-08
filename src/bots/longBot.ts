@@ -1,17 +1,17 @@
-import { getChart, toEur } from '../api/yahoo';
+﻿import { getChart, toEur } from '../api/yahoo';
 import { biasLabel } from '../analysis/model';
 import { fmtPct } from '../format';
 import { BotState, RankItem } from '../types';
 import { BotCtx, daysToEarnings, earningsImminent } from './ctx';
+import { DEFAULT_RISK, longRisk } from './risk';
 import { buy, clone, equityOf, finish, sell } from './sim';
 
-const TARGET_POSITIONS = 8;
-const STOP_LOSS = -0.15;
 const TAKE_PROFIT = 0.6;
 const MIN_HOLD_DAYS = 5;
 
 /** Ein Durchgang des Langzeit-Bots auf Basis des Rankings (Preise bereits in EUR). Läuft auf dem GitHub-Server. */
 export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: BotCtx): Promise<BotState> {
+  const rk = longRisk(ctx?.risk?.long ?? DEFAULT_RISK); // Risiko-Regler (0–100 %, 50 = Standard)
   const bySym = new Map(ranking.map((r, i) => [r.symbol, { r, rank: i + 1 }]));
   const b: BotState = clone(prev);
   const log: string[] = [];
@@ -41,7 +41,7 @@ export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: Bot
       const pnl = price / p.avgPrice - 1;
       const heldDays = (Date.now() - p.openedAt) / 86400_000;
       let why = '';
-      if (pnl <= STOP_LOSS) why = `Stop-Loss: ${fmtPct(pnl)} Verlust (Grenze ${fmtPct(STOP_LOSS, 0)}). Kapital wird geschützt.`;
+      if (pnl <= -rk.stopLoss) why = `Stop-Loss: ${fmtPct(pnl)} Verlust (Grenze ${fmtPct(-rk.stopLoss, 0)}). Kapital wird geschützt.`;
       else if (pnl >= TAKE_PROFIT) why = `Gewinn mitgenommen: ${fmtPct(pnl)} (Ziel ${fmtPct(TAKE_PROFIT, 0)}).`;
       else if (heldDays >= MIN_HOLD_DAYS) why = `Nicht mehr unter den bestbewerteten Aktien des Rankings. Umschichtung bei ${fmtPct(pnl)}.`;
       if (why && sell(b, p.symbol, price, why)) log.push(`Verkauf ${p.symbol}`);
@@ -52,7 +52,7 @@ export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: Bot
     let reason = '';
     if (earningsImminent(ctx, p.symbol))
       reason = `Quartalszahlen stehen unmittelbar an (${ctx!.earnings![p.symbol]}) – Kurse springen dabei oft stark. Position wird vorher geschlossen (${fmtPct(pnl)}).`;
-    else if (pnl <= STOP_LOSS) reason = `Stop-Loss: ${fmtPct(pnl)} Verlust (Grenze ${fmtPct(STOP_LOSS, 0)}). Kapital wird geschützt.`;
+    else if (pnl <= -rk.stopLoss) reason = `Stop-Loss: ${fmtPct(pnl)} Verlust (Grenze ${fmtPct(-rk.stopLoss, 0)}). Kapital wird geschützt.`;
     else if (pnl >= TAKE_PROFIT) reason = `Gewinn mitgenommen: ${fmtPct(pnl)} (Ziel ${fmtPct(TAKE_PROFIT, 0)}).`;
     else if (heldDays >= MIN_HOLD_DAYS && x.r.score <= -1)
       reason = `Trend hat gedreht: Einstufung ${biasLabel(x.r.bias)} (Score ${x.r.score}). Ausstieg bei ${fmtPct(pnl)}.`;
@@ -64,13 +64,13 @@ export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: Bot
   // Käufe nach der im Backtest besten Regel „Momentum mit Trendfilter": Aus den Aktien im Aufwärtstrend die mit der
   // höchsten Relative Stärke. Die Marktampel wird bewusst nur angezeigt, nicht als Bremse genutzt (hat im Backtest geschadet).
   const regime = ctx?.regime?.state;
-  const maxPositions = TARGET_POSITIONS;
+  const maxPositions = rk.positions;
   {
     const picks = ranking
       .map((r, i) => ({ r, rank: i + 1 }))
       // Nur gut handelbare Werte (Tagesumsatz > 10 Mio.): Small/Micro-Caps sind zu illiquid und kursspringend für den Bot
-      .filter(({ r }) => r.score >= 1 && r.aboveSma200 && r.vol < 0.6 && r.liq !== 'micro' && r.liq !== 'small')
-      .filter(({ r }) => r.rs == null || r.rs >= 70)
+      .filter(({ r }) => r.score >= 1 && r.aboveSma200 && r.vol < rk.maxVol && r.liq !== 'micro' && r.liq !== 'small')
+      .filter(({ r }) => r.rs == null || r.rs >= rk.minRs)
       // Schutz vor „Schrott": keine Firmen mit sehr schwachem Fundament (Note < 35 von 100). Im Backtest nicht prüfbar, da es keine historischen Kennzahlen gibt.
       .filter(({ r }) => r.fund == null || r.fund >= 35)
       .sort((a, b) => (b.r.rs ?? 0) - (a.r.rs ?? 0) || a.rank - b.rank)
@@ -83,7 +83,13 @@ export async function stepLongBot(prev: BotState, ranking: RankItem[], ctx?: Bot
       .slice(0, 12);
     for (const { r, rank } of picks) {
       if (b.positions.length >= maxPositions) break;
-      const amount = Math.min(equityOf(b) / maxPositions, b.cash);
+      const eqNow = equityOf(b);
+      const headroom = eqNow * rk.maxInvested - (eqNow - b.cash);
+      if (headroom < 20) {
+        log.push(`Risiko-Grenze erreicht (max. ${(rk.maxInvested * 100).toFixed(0)} % investiert)`);
+        break;
+      }
+      const amount = Math.min(eqNow / maxPositions, b.cash, headroom);
       const reason =
         `Momentum-Strategie mit Trendfilter: Relative Stärke ${r.rs != null ? `${r.rs}/99` : 'hoch'} (stärker als ${r.rs ?? '?'} % aller ausgewerteten Aktien), ` +
         `Einstufung ${biasLabel(r.bias)} (Score ${r.score}), Kurs über 200-Tage-Linie, Schwankung ${(r.vol * 100).toFixed(0)} %, Platz ${rank} im Ranking. ` +

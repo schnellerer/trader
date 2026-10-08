@@ -14,6 +14,12 @@ export const BOTS_URL = 'https://raw.githubusercontent.com/schnellerer/trader/da
 // Zweite Quelle für denselben Stand (GitHub-API, speichert weniger lang zwischen als die Download-Adresse)
 export const BOTS_API_URL = 'https://api.github.com/repos/schnellerer/trader/contents/bots.json?ref=data';
 
+// Repository und Aufträge für die Risiko-Regler
+export const GITHUB_REPO = 'schnellerer/trader';
+export const RISK_WORKFLOW = 'bot-settings.yml';
+export const RISK_PAGE = `https://github.com/${GITHUB_REPO}/actions/workflows/${RISK_WORKFLOW}`;
+export const TOKEN_PAGE = 'https://github.com/settings/personal-access-tokens/new';
+
 // Seite zum Zurücksetzen der Bots / Ändern des Startkapitals
 export const RESET_PAGE = 'https://github.com/schnellerer/trader/actions/workflows/reset-bots.yml';
 export const BOTS_PAGE = 'https://github.com/schnellerer/trader/actions/workflows/bots.yml';

@@ -47,6 +47,17 @@ const SECTIONS: Sec[] = [
       'Wichtig: Die Fundament-Schwellen sind Faustregeln, Branchen unterscheiden sich stark, und sie sind nicht rückblickend getestet (Yahoo liefert keine alten Kennzahlen). Der Backtest belegt nur die Momentum-Regeln.',
   },
   {
+    icon: 'options',
+    title: 'Risiko-Regler (0–100 %)',
+    body:
+      'Im Bots-Tab (Übersicht) stellst du pro Bot ein, wie vorsichtig oder aggressiv er handelt. 50 % ist das bisherige Standardverhalten.\n\n' +
+      '• 0 %: keine neuen Käufe (der Bot pausiert, offene Positionen laufen weiter)\n' +
+      '• unter 50 %: weniger Geld im Markt (z. B. 25 % = höchstens die Hälfte investiert), kleinere Positionen, engere Stops, strengere Einstiegsregeln\n' +
+      '• über 50 %: größere und konzentriertere Positionen, weitere Stops, lockerere Regeln – mehr Chance UND mehr Verlustrisiko\n\n' +
+      'Beim Langzeit-Bot gilt der Stop-Loss des Reglers für alle offenen Positionen, die anderen Werte betreffen neue Käufe.\n\n' +
+      'Der Wert wird über einen GitHub-Auftrag an den Server geschickt. Dafür braucht die App einmalig einen GitHub-Schlüssel (Mehr → Einstellungen) – oder du trägst den Wert auf der GitHub-Seite von Hand ein. Er gilt nach etwa 1–2 Minuten. Ein höheres Risiko macht einen Bot nicht besser: Es verstärkt Gewinne und Verluste gleichermaßen.',
+  },
+  {
     icon: 'speedometer',
     title: 'Relative Stärke (RS)',
     body:

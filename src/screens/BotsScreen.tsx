@@ -12,6 +12,7 @@ import { fmtDate, fmtDateTime, fmtMoney, fmtNum, fmtPct, timeAgo } from '../form
 import { useAsync } from '../hooks';
 import { BotState, Trade } from '../types';
 import TradeReplay from '../components/TradeReplay';
+import RiskCard from '../components/RiskCard';
 import { LuckCard, StressCard, TaxCard } from '../components/InsightCards';
 import BacktestView from './BacktestView';
 import { colors, signColor, space } from '../theme';
@@ -115,6 +116,9 @@ export default function BotsScreen() {
               <Segmented value={subOptions.some((o) => o.key === sub) ? sub : 'overview'} onChange={setSub} options={subOptions} />
             </View>
 
+            {sub === 'overview' && which !== 'proof' && (
+              <RiskCard bot={which} serverValue={data.data?.settings?.[which]} onApplied={() => data.reload()} />
+            )}
             {sub === 'overview' && <Overview bot={bot} intraday={intraday} onToday={() => setSub('today')} />}
             {sub === 'today' && <TodayTab bot={bot} />}
             {sub === 'positions' && <Positions bot={bot} />}

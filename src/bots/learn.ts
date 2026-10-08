@@ -79,9 +79,9 @@ export function strictMode(b: BotState): boolean {
 }
 
 /** Tages-Verlustlimit: heute realisiert/bewertet mehr als 1,5 % verloren? */
-export function dayLossLocked(b: BotState, now = Date.now()): boolean {
+export function dayLossLocked(b: BotState, now = Date.now(), limit = 0.015): boolean {
   const d = new Date(now);
   const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const before = [...b.equity].reverse().find((e) => e.t < start)?.v ?? b.startCapital;
-  return (equityOf(b) - before) / before < -0.015;
+  return (equityOf(b) - before) / before < -limit;
 }

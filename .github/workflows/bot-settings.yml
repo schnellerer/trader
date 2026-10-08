@@ -1,0 +1,54 @@
+name: Bot-Risiko einstellen
+
+on:
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Day-Trading-Bot Risiko 0-100 (50 = Standard, leer = unverändert)'
+        default: ''
+      long:
+        description: 'Langzeit-Bot Risiko 0-100 (50 = Standard, leer = unverändert)'
+        default: ''
+      gold:
+        description: 'Gold-Bot Risiko 0-100 (50 = Standard, leer = unverändert)'
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bots
+  cancel-in-progress: false
+
+jobs:
+  settings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bot-Stand laden (Daten-Branch)
+        run: |
+          git clone --quiet --depth 1 --branch data "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" botdata 2>/dev/null || {
+            mkdir botdata
+            git -C botdata init --quiet -b data
+          }
+      - name: Regler setzen
+        env:
+          MODE: settings
+          DATA_DIR: botdata
+          RISK_DAY: ${{ github.event.inputs.day }}
+          RISK_LONG: ${{ github.event.inputs.long }}
+          RISK_GOLD: ${{ github.event.inputs.gold }}
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+        run: npx --yes tsx@4 scripts/runBots.ts
+      - name: Stand speichern
+        run: |
+          cd botdata
+          git config user.name "bot-server"
+          git config user.email "bot-server@users.noreply.github.com"
+          git add bots.json
+          git commit --quiet --amend -m "Bot-Stand" 2>/dev/null || git commit --quiet -m "Bot-Stand"
+          git push --quiet --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data

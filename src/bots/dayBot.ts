@@ -5,10 +5,9 @@ import { fmtPct } from '../format';
 import { BotState } from '../types';
 import { earningsImminent, BotCtx } from './ctx';
 import { badHour, dayLossLocked, isBanned, learnFrom, strictMode, symbolWeight } from './learn';
+import { DEFAULT_RISK, dayRisk } from './risk';
 import { buy, clone, closePosition, equityOf, finish } from './sim';
 
-const MAX_POSITIONS = 5;
-const POSITION_SHARE = 0.2; // max. 20 % des Gesamtwerts pro Trade
 const MIN_STOP = 0.004; // Stop-Loss mindestens 0,4 %
 const MAX_STOP = 0.012; // höchstens 1,2 %
 const RR = 1.8; // Gewinnziel = 1,8 × Stop-Abstand
@@ -89,6 +88,7 @@ export async function stepDayBot(prev: BotState, ctx?: BotCtx): Promise<BotState
   const log: string[] = [];
   const since = (b.lastRun ?? Date.now() - 10 * 60_000) - 60_000; // 1-Minuten-Kerzen seit dem letzten Lauf auswerten
   const tradesBefore = b.trades.length;
+  const rk = dayRisk(ctx?.risk?.day ?? DEFAULT_RISK); // Risiko-Regler (0–100 %, 50 = Standard)
 
   b.positions.forEach((p) => {
     const s = bySym.get(p.symbol);
@@ -134,12 +134,13 @@ export async function stepDayBot(prev: BotState, ctx?: BotCtx): Promise<BotState
   const strict = strictMode(b) || redMarket;
   const anyOpen = snaps.some((s) => s.open);
   if (!anyOpen) log.push('Börsen aktuell geschlossen – keine neuen Käufe.');
-  else if (dayLossLocked(b)) log.push('Tages-Verlustlimit (−1,5 %) erreicht – heute keine neuen Trades.');
+  else if (rk.maxInvested <= 0) log.push('Risiko-Regler auf 0 % – Bot pausiert, keine neuen Käufe.');
+  else if (dayLossLocked(b, Date.now(), rk.dayLoss)) log.push(`Tages-Verlustlimit (−${(rk.dayLoss * 100).toFixed(1).replace('.', ',')} %) erreicht – heute keine neuen Trades.`);
   else if (badHour(b)) log.push('Diese Handelsstunde war bisher schlecht – keine neuen Käufe.');
   else {
     const minRsi = strict ? 55 : 52;
     const maxRsi = strict ? 68 : 72;
-    const minMom = strict ? 0.0015 : 0.0005;
+    const minMom = strict ? Math.max(0.0015, rk.minMom) : rk.minMom;
     const candidates = snaps
       .filter((s) => s.open && !s.closingSoon && !isBanned(b, s.symbol) && !earningsImminent(ctx, s.symbol))
       .filter((s) => s.trendUp && s.rsi >= minRsi && s.rsi <= maxRsi && s.dayChg > 0.002 && s.mom10 > minMom && (!strict || s.volSpike > 1))
@@ -147,12 +148,18 @@ export async function stepDayBot(prev: BotState, ctx?: BotCtx): Promise<BotState
       .map((s) => ({ s, score: (s.dayChg + s.mom10 * 3 + s.mom30 + Math.min(s.volSpike, 3) * 0.002) * symbolWeight(b, s.symbol) }))
       .sort((a, c) => c.score - a.score);
     let bought = 0;
-    const limit = strict ? 3 : MAX_POSITIONS;
+    const limit = strict ? Math.min(3, rk.maxPositions) : rk.maxPositions;
     for (const { s } of candidates) {
       if (b.positions.length >= limit || bought >= 2) break;
       const w = symbolWeight(b, s.symbol);
-      const amount = Math.min(equityOf(b) * POSITION_SHARE * (strict ? 0.5 : 1) * Math.min(w, 1), b.cash);
-      const stopPct = Math.min(MAX_STOP, Math.max(MIN_STOP, s.atrPct * 6));
+      const eqNow = equityOf(b);
+      const headroom = eqNow * rk.maxInvested - (eqNow - b.cash); // so viel darf noch investiert werden
+      if (headroom < 20) {
+        log.push(`Risiko-Grenze erreicht (max. ${(rk.maxInvested * 100).toFixed(0)} % investiert)`);
+        break;
+      }
+      const amount = Math.min(eqNow * rk.share * (strict ? 0.5 : 1) * Math.min(w, 1), b.cash, headroom);
+      const stopPct = Math.min(MAX_STOP * rk.stopMul, Math.max(MIN_STOP * rk.stopMul, s.atrPct * 6 * rk.stopMul));
       const exp = learnNote(b, s.symbol, w, strict);
       const reason =
         `1-Minuten-Aufwärtstrend: EMA 9 über EMA 21 (steigend), Kurs ${s.price.toFixed(2)} € über VWAP ${s.vwap.toFixed(2)} €, ` +
