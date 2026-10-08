@@ -6,6 +6,7 @@ export interface BotsFile {
   startCapital: number;
   day: BotState;
   long: BotState;
+  gold?: BotState; // fehlt in älteren Dateien
 }
 
 /** Lädt den aktuellen Stand der Bots vom GitHub-Server. null = Bots haben noch nicht gelaufen. */

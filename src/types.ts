@@ -99,6 +99,10 @@ export interface Position {
   avgPrice: number; // EUR
   lastPrice: number; // EUR
   openedAt: number;
+  dir?: 1 | -1; // 1 = Long (Standard), -1 = Short
+  stop?: number; // Stop-Loss (EUR)
+  target?: number; // Gewinnziel (EUR)
+  risk?: number; // anfänglicher Stop-Abstand (EUR) = 1R
 }
 
 export interface Trade {
@@ -106,7 +110,7 @@ export interface Trade {
   t: number;
   symbol: string;
   name: string;
-  side: 'KAUF' | 'VERKAUF';
+  side: 'KAUF' | 'VERKAUF' | 'SHORT' | 'COVER';
   qty: number;
   price: number; // EUR
   fee: number;
@@ -115,7 +119,28 @@ export interface Trade {
   pnlPct?: number;
 }
 
+/** Erfahrung des Day-Trading-Bots pro Aktie (Grundlage fürs „Lernen") */
+export interface SymStat {
+  n: number; // abgeschlossene Trades
+  w: number; // davon Gewinne
+  pnlPct: number; // Summe der Trade-Renditen
+  streak: number; // aktuelle Verlustserie
+  banUntil: number; // bis wann gesperrt (ms)
+}
+
+export interface LearnState {
+  symbols: Record<string, SymStat>;
+  hours: Record<string, { n: number; w: number }>; // Handelsstunde (UTC) → Trefferquote
+}
+
+export interface Lesson {
+  t: number;
+  text: string;
+}
+
 export interface BotState {
+  learn?: LearnState;
+  lessons?: Lesson[];
   cash: number;
   startCapital: number;
   positions: Position[];

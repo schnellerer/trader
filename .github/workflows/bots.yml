@@ -2,16 +2,14 @@ name: Bots handeln
 
 on:
   schedule:
-    # Day-Trading-Bot: alle 5 Minuten zu den Börsenzeiten (UTC, Mo-Fr). Letzter Lauf kurz nach US-Schluss.
-    - cron: '*/5 6-21 * * 1-5'
-    # Langzeit-Bot: Mittags (Kurse aktualisieren) und nach der Ranking-Berechnung
-    - cron: '0 15 * * 1-5'
-    - cron: '10 23 * * 1-5'
+    # Alle Bots werden alle 5 Minuten (Mo-Fr) angestoßen. Das Skript entscheidet selbst, welcher Bot dran ist:
+    #  - Day-Trading-Bot: 6-21 Uhr UTC (Börsenzeiten), Gold-Bot: laufend, Langzeit-Bot: 15 und 23 Uhr UTC
+    - cron: '*/5 * * * 1-5'
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Welcher Bot? (day, long oder both)'
-        default: 'both'
+        description: 'Welcher Bot? (auto, day, long, gold oder all)'
+        default: 'all'
 
 permissions:
   contents: write
@@ -36,16 +34,9 @@ jobs:
             mkdir botdata
             git -C botdata init --quiet -b data
           }
-      - name: Modus bestimmen
-        id: mode
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then M="${{ github.event.inputs.mode }}"
-          elif [ "${{ github.event.schedule }}" = "*/5 6-21 * * 1-5" ]; then M=day
-          else M=long; fi
-          echo "mode=$M" >> "$GITHUB_OUTPUT"
       - name: Bots handeln lassen
         env:
-          MODE: ${{ steps.mode.outputs.mode }}
+          MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mode || 'auto' }}
           DATA_DIR: botdata
         run: npx --yes tsx@4 scripts/runBots.ts
       - name: Stand speichern

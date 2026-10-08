@@ -44,7 +44,7 @@ export default function SettingsScreen() {
         <SectionTitle>Wichtig zu den Bots</SectionTitle>
         <Card>
           <Text style={s.muted}>
-            Die Bots laufen auf einem kostenlosen GitHub-Server, auch wenn die App geschlossen und der PC aus ist. Day-Trading-Bot: etwa alle 5 Minuten zu den Börsenzeiten (Mo–Fr), GitHub startet geplante Läufe manchmal mit Verspätung. Langzeit-Bot: täglich nach der Ranking-Berechnung.{'\n\n'}
+            Die Bots laufen auf einem kostenlosen GitHub-Server, auch wenn die App geschlossen und der PC aus ist. Day-Trading-Bot und Gold-Bot: etwa alle 5 Minuten (Mo–Fr), dabei werden alle 1-Minuten- bzw. 5-Minuten-Kerzen seit dem letzten Lauf ausgewertet. GitHub startet geplante Läufe manchmal mit Verspätung, schneller als alle 5 Minuten geht es nicht. Langzeit-Bot: zweimal täglich.{'\n\n'}
             Gebühren von 0,05 % pro Order werden simuliert. Kurse in US-Dollar werden zum aktuellen Wechselkurs in Euro umgerechnet.
           </Text>
         </Card>
