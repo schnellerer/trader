@@ -37,23 +37,26 @@ export function buy(b: BotState, symbol: string, name: string, price: number, am
   return true;
 }
 
-export function sell(b: BotState, symbol: string, price: number, reason: string, feeRate = FEE_RATE): boolean {
+/** Verkauf; fraction < 1 verkauft nur einen Teil der Position (z. B. 0,5 = die Hälfte) */
+export function sell(b: BotState, symbol: string, price: number, reason: string, feeRate = FEE_RATE, fraction = 1): boolean {
   const i = b.positions.findIndex((p) => p.symbol === symbol && !isShort(p));
   if (i < 0 || price <= 0) return false;
   const p = b.positions[i];
-  const gross = p.qty * price;
+  const qty = fraction >= 0.9999 ? p.qty : p.qty * fraction;
+  const gross = qty * price;
   const fee = gross * feeRate;
-  const cost = p.qty * p.avgPrice;
+  const cost = qty * p.avgPrice;
   const pnl = gross - fee - cost;
   b.cash += gross - fee;
-  b.positions.splice(i, 1);
+  if (qty >= p.qty) b.positions.splice(i, 1);
+  else p.qty -= qty;
   b.trades.unshift({
     id: id(),
     t: Date.now(),
     symbol,
     name: p.name,
     side: 'VERKAUF',
-    qty: p.qty,
+    qty,
     price,
     fee,
     reason,

@@ -89,12 +89,25 @@ export function buildScenarios(stats: DriftStats, score: number): Scenario[] {
   });
 }
 
-/** Basis-/Bull-/Bear-Szenario für 30 Tage aus erwarteter Jahresrendite und Volatilität */
-export function scenario30(expectedYear: number, vol: number) {
-  const T = 30 / 365;
-  const m = (expectedYear - (vol * vol) / 2) * T;
-  const s = vol * Math.sqrt(T);
+/**
+ * Szenarien für einen beliebigen Zeitraum aus den Ranking-Daten.
+ * `expected` ist die Jahresrendite inkl. Trend-Zuschlag für 1 Jahr; der Zuschlag wird hier je Zeitraum neu gewichtet
+ * (voll bis 1 Jahr, halb bis 3 Jahre, danach 0), wie bei den Szenarien der Einzelaktie.
+ */
+export function scenarioFor(item: { expected: number; score: number; vol: number }, years: number) {
+  const tilt = 0.02 * clamp(item.score, -4, 4);
+  const drift = item.expected - tilt;
+  const mu = drift + tilt * (years <= 1 ? 1 : years <= 3 ? 0.5 : 0);
+  const m = (mu - (item.vol * item.vol) / 2) * years;
+  const s = item.vol * Math.sqrt(years);
   return { bull: Math.exp(m + s) - 1, base: Math.exp(m) - 1, bear: Math.exp(m - s) - 1 };
 }
+
+/** Zeiträume im Ranking */
+export const RANK_HORIZONS = [
+  { key: '30d', label: '30 Tage', years: 30 / 365 },
+  { key: '1y', label: '1 Jahr', years: 1 },
+  { key: '5y', label: '5 Jahre', years: 5 },
+] as const;
 
 export const biasLabel = (b: Bias) => (b === 'bullish' ? 'Bullisch' : b === 'bearish' ? 'Bärisch' : 'Neutral');

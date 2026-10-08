@@ -392,7 +392,7 @@ function Positions({ bot }: { bot: BotState }) {
   );
 }
 
-function TradeCard({ t }: { t: Trade }) {
+export function TradeCard({ t }: { t: Trade }) {
   const [open, setOpen] = useState(false);
   const opening = t.side === 'KAUF' || t.side === 'SHORT';
   const good = (t.pnl ?? 0) >= 0;
