@@ -45,7 +45,8 @@ export function scoreFund(f: Fund, price?: number): FundScore {
       s += v;
       n++;
       lines.push({ text: `KGV ${num(pe)}${f.fpe ? ' (erwartet)' : ''} – ${v >= 1 ? 'günstig bis fair bewertet' : v === 0 ? 'durchschnittlich bis leicht teuer' : 'teuer'}. Der breite Markt liegt langfristig bei ca. 16–22.`, v: Math.sign(v) });
-    } else if ((f.mar != null && f.mar < 0) || (f.pe == null && f.fpe == null)) {
+    } else if (f.mar != null && f.mar < 0) {
+      // nur bei belegbarem Verlust (negative Marge) – fehlende Daten werden NICHT als Verlust gewertet
       s -= 1;
       n++;
       lines.push({ text: 'Kein KGV, weil das Unternehmen aktuell keinen Gewinn macht – die Bewertung ist reine Hoffnung auf künftige Gewinne.', v: -1 });

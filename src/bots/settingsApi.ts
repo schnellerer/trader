@@ -1,17 +1,40 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { GITHUB_REPO, RISK_WORKFLOW } from '../config';
 
 const TOKEN_KEY = 'gh-token-v1';
 
+// Der Schlüssel liegt im verschlüsselten Speicher des Handys (Android Keystore). Fällt der aus, greift der normale App-Speicher.
 export const getToken = async (): Promise<string | null> => {
+  try {
+    const v = await SecureStore.getItemAsync(TOKEN_KEY);
+    if (v) return v;
+  } catch {
+    /* weiter mit Ersatzspeicher */
+  }
   try {
     return (await AsyncStorage.getItem(TOKEN_KEY)) || null;
   } catch {
     return null;
   }
 };
-export const setToken = (t: string) => AsyncStorage.setItem(TOKEN_KEY, t.trim());
-export const clearToken = () => AsyncStorage.removeItem(TOKEN_KEY);
+export const setToken = async (t: string) => {
+  const v = t.trim();
+  try {
+    await SecureStore.setItemAsync(TOKEN_KEY, v);
+    await AsyncStorage.removeItem(TOKEN_KEY).catch(() => {});
+  } catch {
+    await AsyncStorage.setItem(TOKEN_KEY, v);
+  }
+};
+export const clearToken = async () => {
+  try {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  } catch {
+    /* ignorieren */
+  }
+  await AsyncStorage.removeItem(TOKEN_KEY).catch(() => {});
+};
 
 export type ApplyResult = { ok: true } | { ok: false; reason: 'no-token' | 'denied' | 'error'; message: string };
 

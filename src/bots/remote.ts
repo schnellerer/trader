@@ -23,6 +23,8 @@ async function get(url: string, headers: Record<string, string> = {}): Promise<{
  * GitHubs Download-Adresse speichert Dateien bis zu 5 Minuten zwischen (und ignoriert Zusätze hinter dem „?"),
  * deshalb wird bei einem älteren Stand zusätzlich die GitHub-API gefragt und der neuere Stand genommen.
  */
+let lastApiTry = 0;
+
 export async function fetchBots(): Promise<BotsFile | null> {
   let raw: { status: number; data: BotsFile | null } = { status: 0, data: null };
   try {
@@ -32,7 +34,9 @@ export async function fetchBots(): Promise<BotsFile | null> {
   }
   const stale = !raw.data || Date.now() - raw.data.updatedAt > 8 * 60_000;
   let api: BotsFile | null = null;
-  if (stale) {
+  // Die GitHub-API erlaubt ohne Anmeldung nur 60 Abfragen pro Stunde → höchstens alle 5 Minuten fragen
+  if (stale && Date.now() - lastApiTry > 5 * 60_000) {
+    lastApiTry = Date.now();
     try {
       api = (await get(BOTS_API_URL, { Accept: 'application/vnd.github.raw' })).data;
     } catch {
