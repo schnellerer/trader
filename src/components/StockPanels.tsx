@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FundResult } from '../analysis/fundData';
@@ -210,7 +210,7 @@ const s = StyleSheet.create({
   grade: { width: 54, height: 54, borderRadius: 27, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   gradeText: { fontSize: 26, fontWeight: '900' },
   flag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.amberBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99 },
-  flagText: { color: colors.amber, fontSize: 11, fontWeight: '700' },
+  flagText: { color: colors.amber, fontSize: 12, fontWeight: '700' },
   compTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
   barBg: { height: 6, borderRadius: 3, backgroundColor: colors.card2, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },

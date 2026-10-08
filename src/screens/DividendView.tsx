@@ -7,7 +7,7 @@ import { Card, Disclaimer, ErrorBox, Loading, Screen, SectionTitle } from '../co
 import { fmtDateTime, fmtMoney, fmtNum, fmtPct } from '../format';
 import { useAsync } from '../hooks';
 import { ScanRow } from '../types';
-import { colors, signColor, space } from '../theme';
+import { colors, signColor, space, type } from '../theme';
 
 type Sort = 'yield' | 'safety' | 'growth' | 'streak';
 type Size = 'big' | 'liquid' | 'all';
@@ -156,16 +156,14 @@ function DivRow({ r, onPress }: { r: ScanRow; onPress: () => void }) {
         <View style={s.stats}>
           <View style={s.stat}>
             <Text style={s.statLabel}>Sicherheit</Text>
-            <Text style={[s.statVal, { color: safetyColor(q) }]}>
-              {q} {q >= 80 ? '· sehr sicher' : q >= 65 ? '· solide' : q >= 45 ? '· mittel' : '· riskant'}
-            </Text>
+            <Text style={[s.statVal, { color: safetyColor(q) }]}>{q}</Text>
           </View>
           <View style={s.stat}>
             <Text style={s.statLabel}>Ausschüttung</Text>
             <Text style={s.statVal}>{r.payout != null ? `${fmtNum(r.payout * 100, 0)} %` : '–'}</Text>
           </View>
           <View style={s.stat}>
-            <Text style={s.statLabel}>Wachstum p.a.</Text>
+            <Text style={s.statLabel}>Wachstum</Text>
             <Text style={[s.statVal, r.dgr != null ? { color: signColor(r.dgr) } : null]}>{r.dgr != null ? fmtPct(r.dgr, 1) : '–'}</Text>
           </View>
           <View style={s.stat}>
@@ -175,6 +173,7 @@ function DivRow({ r, onPress }: { r: ScanRow; onPress: () => void }) {
         </View>
 
         <View style={s.tags}>
+          <Tag text={q >= 80 ? 'sehr sichere Dividende' : q >= 65 ? 'solide Dividende' : q >= 45 ? 'mittlere Sicherheit' : 'riskante Dividende'} good={q >= 65} warn={q >= 45 && q < 65} bad={q < 45} />
           {r.fund != null ? <Tag text={`Fundament ${gradeOf(r.fund)} · ${r.fund}`} good={r.fund >= 62} warn={r.fund < 48} /> : null}
           {r.dtrap ? <Tag text="Dividendenfalle?" bad /> : null}
           {r.dcut ? <Tag text={`Kürzung ${r.dcut}`} warn /> : null}
@@ -191,14 +190,14 @@ function DivRow({ r, onPress }: { r: ScanRow; onPress: () => void }) {
 }
 
 const Tag = ({ text, good, bad, warn, accent }: { text: string; good?: boolean; bad?: boolean; warn?: boolean; accent?: boolean }) => (
-  <View style={{ backgroundColor: good ? colors.greenBg : bad ? colors.redBg : warn ? colors.amberBg : accent ? colors.accentBg : colors.card2, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 }}>
-    <Text style={{ fontSize: 10, fontWeight: '700', color: good ? colors.green : bad ? colors.red : warn ? colors.amber : accent ? colors.accent : colors.muted }}>{text}</Text>
+  <View style={{ backgroundColor: good ? colors.greenBg : bad ? colors.redBg : warn ? colors.amberBg : accent ? colors.accentBg : colors.card2, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 99 }}>
+    <Text style={{ fontSize: type.small, fontWeight: '600', color: good ? colors.green : bad ? colors.red : warn ? colors.amber : accent ? colors.accent : colors.muted }}>{text}</Text>
   </View>
 );
 
 const s = StyleSheet.create({
-  muted: { color: colors.muted, fontSize: 12, lineHeight: 18 },
-  hint: { color: colors.muted, fontSize: 11 },
+  muted: { color: colors.muted, fontSize: type.small, lineHeight: 18 },
+  hint: { color: colors.muted, fontSize: type.small },
   label: { color: colors.text, fontWeight: '700', fontSize: 13, marginTop: 14, marginBottom: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7 },
@@ -206,12 +205,12 @@ const s = StyleSheet.create({
   chipText: { color: colors.muted, fontWeight: '700', fontSize: 12 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
   switchLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  sym: { color: colors.text, fontWeight: '700', fontSize: 16 },
-  yield: { color: colors.green, fontWeight: '800', fontSize: 20 },
-  stats: { flexDirection: 'row', marginTop: 12, gap: 8 },
-  stat: { flex: 1 },
-  statLabel: { color: colors.muted, fontSize: 10, marginBottom: 2 },
-  statVal: { color: colors.text, fontSize: 12, fontWeight: '700' },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  sym: { color: colors.text, fontWeight: '800', fontSize: type.h1 },
+  yield: { color: colors.green, fontWeight: '800', fontSize: 22 },
+  stats: { flexDirection: 'row', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  stat: { flex: 1, paddingRight: 4 },
+  statLabel: { color: colors.muted, fontSize: type.small, marginBottom: 3 },
+  statVal: { color: colors.text, fontSize: type.value, fontWeight: '700' },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   openRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 8, gap: 4 },
 });

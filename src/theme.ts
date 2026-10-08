@@ -17,6 +17,18 @@ export const colors = {
   onAccent: '#000000', // Schrift auf grünen Flächen
 };
 
+/** Einheitliche Schriftgrößen für die ganze App */
+export const type = {
+  display: 30, // große Zahlen (Depotwert)
+  title: 26, // Seitentitel
+  h1: 18, // Aktienkürzel, Karten-Überschriften
+  h2: 16, // Preise, Abschnittstitel
+  value: 15, // Kennzahlen
+  body: 14, // Fließtext, Chips
+  small: 12, // Beschriftungen, Hinweise
+  micro: 11, // Kleinstes (nur Überschriften in Großbuchstaben)
+};
+
 export const radius = { s: 8, m: 14, l: 20 };
 export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 24 };
 

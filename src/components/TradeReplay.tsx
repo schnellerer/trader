@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getChart } from '../api/yahoo';
@@ -72,5 +72,5 @@ export default function TradeReplay({ t }: { t: Trade }) {
 const s = StyleSheet.create({
   btn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
   btnText: { color: colors.accent, fontWeight: '600', fontSize: 13 },
-  legend: { color: colors.muted, fontSize: 11, marginTop: 6, lineHeight: 16 },
+  legend: { color: colors.muted, fontSize: 12, marginTop: 6, lineHeight: 16 },
 });

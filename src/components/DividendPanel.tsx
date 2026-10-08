@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Fund } from '../api/fundamentals';
@@ -144,8 +144,8 @@ const s = StyleSheet.create({
   bars: { flexDirection: 'row', alignItems: 'flex-end', height: 130, gap: 4 },
   barCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   bar: { width: '70%', borderRadius: 3 },
-  barVal: { color: colors.muted, fontSize: 8, marginBottom: 2 },
-  barLabel: { color: colors.muted, fontSize: 10, marginTop: 4 },
+  barVal: { color: colors.muted, fontSize: 10, marginBottom: 2 },
+  barLabel: { color: colors.muted, fontSize: 11, marginTop: 4 },
   inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card2, borderRadius: radius.m, paddingHorizontal: 14, marginTop: 4 },
   input: { flex: 1, color: colors.text, fontSize: 16, paddingVertical: 10 },
 });

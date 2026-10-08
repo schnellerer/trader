@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import * as Updates from 'expo-updates';
 import { Linking, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { getDisabledSources, NEWS_SOURCES, setSourceEnabled } from '../api/news';
@@ -185,6 +185,6 @@ const s = StyleSheet.create({
   group: { color: colors.text, fontWeight: '700', fontSize: 13, marginTop: 10, marginBottom: 2 },
   srcRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
   srcName: { color: colors.text, fontSize: 14 },
-  srcNote: { color: colors.muted, fontSize: 11 },
+  srcNote: { color: colors.muted, fontSize: 12 },
   input: { backgroundColor: colors.card2, color: colors.text, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginTop: 12, marginBottom: 4 },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,7 +43,7 @@ export function BiasBadge({ bias, small }: { bias: Bias; small?: boolean }) {
   return (
     <View style={[s.badge, { backgroundColor: bg }, small && { paddingVertical: 2, paddingHorizontal: 8 }]}>
       <Ionicons name={icon as any} size={small ? 12 : 14} color={c} />
-      <Text style={[s.badgeText, { color: c }, small && { fontSize: 11 }]}>{biasLabel(bias)}</Text>
+      <Text style={[s.badgeText, { color: c }, small && { fontSize: 12 }]}>{biasLabel(bias)}</Text>
     </View>
   );
 }
@@ -138,5 +138,5 @@ const s = StyleSheet.create({
   muted: { color: colors.muted, fontSize: 14 },
   btn: { flexDirection: 'row', backgroundColor: colors.accent, paddingVertical: 11, paddingHorizontal: 18, borderRadius: radius.s + 2, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   btnText: { color: colors.onAccent, fontWeight: '700', fontSize: 14 },
-  disclaimer: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: space.xl, marginBottom: space.xl },
+  disclaimer: { color: colors.muted, fontSize: 12, lineHeight: 16, marginTop: space.xl, marginBottom: space.xl },
 });

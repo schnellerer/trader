@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -212,7 +212,7 @@ export default function DetailScreen() {
               <Text style={[s.big, { color: signColor(an.data.newsSentiment) }]}>
                 {an.data.newsSentiment > 0.15 ? 'Positiv' : an.data.newsSentiment < -0.15 ? 'Negativ' : 'Neutral'}
               </Text>
-              <Text style={[s.muted, { fontSize: 11, marginTop: 4 }]}>Einfache Schlagzeilen-Analyse, nur ein grober Hinweis.</Text>
+              <Text style={[s.muted, { fontSize: 12, marginTop: 4 }]}>Einfache Schlagzeilen-Analyse, nur ein grober Hinweis.</Text>
             </Card>
             {an.data.news.length === 0 ? <Text style={s.muted}>Keine News gefunden.</Text> : an.data.news.map((n, i) => <NewsRow key={i} n={n} />)}
           </View>

@@ -72,16 +72,24 @@ export async function setSourceEnabled(id: string, enabled: boolean) {
 
 // ---------- Einlesen ----------
 
-const unesc = (s: string) =>
+const NAMED: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
+  bdquo: '„', sbquo: '‚', euro: '€', pound: '£', yen: '¥', cent: '¢', copy: '©', reg: '®', trade: '™', deg: '°', middot: '·', bull: '•', laquo: '«', raquo: '»',
+  auml: 'ä', ouml: 'ö', uuml: 'ü', Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', szlig: 'ß', eacute: 'é', egrave: 'è', aacute: 'á', agrave: 'à', ccedil: 'ç', ntilde: 'ñ',
+};
+
+/** Wandelt HTML-Zeichencodes (&amp;, &#8217;, &#x2019; …) in normale Zeichen um */
+export const decodeEntities = (s: string) =>
   s
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/<[^>]+>/g, '')
-    .trim();
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&([a-z]+);/gi, (m, n) => NAMED[n] ?? m);
+
+const unesc = (s: string) => {
+  // Reihenfolge: erst Zeichencodes von Textteilen auflösen, Tags entfernen, dann nochmals decodieren (Feeds verschachteln gern)
+  const noCdata = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+  return decodeEntities(decodeEntities(noCdata).replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+};
 
 const tag = (block: string, name: string) => {
   const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, 'i'));

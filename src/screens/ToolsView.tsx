@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ALLOWANCE, ChurchTax, netAfterTax } from '../analysis/tax';
 import { Card, Disclaimer, Screen, SectionTitle, Stat } from '../components/UI';
@@ -105,5 +105,5 @@ const s = StyleSheet.create({
   inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card2, borderRadius: radius.m, paddingHorizontal: 14, marginTop: 4 },
   input: { flex: 1, color: colors.text, fontSize: 16, paddingVertical: 10 },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
-  chipText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  chipText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
 });

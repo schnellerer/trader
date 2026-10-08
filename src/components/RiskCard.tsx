@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { applyRisk } from '../bots/settingsApi';
@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   mark: { position: 'absolute', top: 7, width: 2, height: 16, backgroundColor: colors.border },
   thumb: { position: 'absolute', width: 20, height: 20, borderRadius: 10, backgroundColor: colors.bg, borderWidth: 3, top: 5 },
   scale: { flexDirection: 'row', justifyContent: 'space-between' },
-  muted: { color: colors.muted, fontSize: 10 },
+  muted: { color: colors.muted, fontSize: 11 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, marginBottom: 6 },
   step: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card2, alignItems: 'center', justifyContent: 'center' },
   chip: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingVertical: 5 },

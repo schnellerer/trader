@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { History, idxAt, loadHistory } from '../analysis/history';
 import { PRESET_RULES, runRule } from '../analysis/ruleLab';
@@ -199,14 +199,14 @@ function Play({
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ width: 84 }}>
                     <Text style={s.sym}>{r.sy.replace('.DE', '')}</Text>
-                    {held ? <Text style={{ color: colors.accent, fontSize: 10, fontWeight: '800' }}>GEHALTEN</Text> : null}
+                    {held ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '800' }}>GEHALTEN</Text> : null}
                   </View>
                   <View style={{ flex: 1, marginRight: 10 }}>
                     <Chart data={r.series} height={32} minimal />
                   </View>
                   <View style={{ alignItems: 'flex-end', width: 92 }}>
                     <Text style={s.price}>{fmtNum(r.p)}</Text>
-                    <Text style={{ color: signColor(r.m3), fontSize: 11 }}>3 Mon. {fmtPct(r.m3, 0)}</Text>
+                    <Text style={{ color: signColor(r.m3), fontSize: 12 }}>3 Mon. {fmtPct(r.m3, 0)}</Text>
                   </View>
                 </View>
               </Pressable>

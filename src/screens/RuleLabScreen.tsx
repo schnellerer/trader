@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { loadHistory } from '../analysis/history';
@@ -239,7 +239,7 @@ const s = StyleSheet.create({
   muted: { color: colors.muted, fontSize: 12, lineHeight: 18 },
   text: { color: colors.text, fontSize: 13, lineHeight: 20 },
   label: { color: colors.text, fontWeight: '700', fontSize: 14 },
-  hint: { color: colors.muted, fontSize: 11, marginTop: 2, lineHeight: 15 },
+  hint: { color: colors.muted, fontSize: 12, marginTop: 2, lineHeight: 15 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   btn: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.card2, alignItems: 'center', justifyContent: 'center' },
   value: { color: colors.accent, fontWeight: '800', fontSize: 14, minWidth: 64, textAlign: 'center' },

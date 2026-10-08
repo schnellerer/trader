@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -110,5 +110,5 @@ const s = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
   sym: { color: colors.text, fontWeight: '700', fontSize: 15 },
   name: { color: colors.muted, fontSize: 13, marginTop: 2 },
-  exch: { color: colors.muted, fontSize: 11 },
+  exch: { color: colors.muted, fontSize: 12 },
 });

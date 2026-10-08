@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -379,7 +379,7 @@ function Positions({ bot }: { bot: BotState }) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={s.sym}>{p.symbol}</Text>
                     <View style={[s.side, { backgroundColor: short ? colors.redBg : colors.greenBg, paddingVertical: 2 }]}>
-                      <Text style={{ color: short ? colors.red : colors.green, fontWeight: '800', fontSize: 10 }}>{short ? 'SHORT' : 'LONG'}</Text>
+                      <Text style={{ color: short ? colors.red : colors.green, fontWeight: '800', fontSize: 12 }}>{short ? 'SHORT' : 'LONG'}</Text>
                     </View>
                   </View>
                   <Text style={s.muted} numberOfLines={1}>{p.name}</Text>
@@ -417,7 +417,7 @@ export function TradeCard({ t }: { t: Trade }) {
       <Pressable onPress={() => setOpen(!open)}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={[s.side, { backgroundColor: opening ? colors.accentBg : good ? colors.greenBg : colors.redBg }]}>
-            <Text style={{ color: opening ? colors.accent : good ? colors.green : colors.red, fontWeight: '800', fontSize: 11 }}>{t.side}</Text>
+            <Text style={{ color: opening ? colors.accent : good ? colors.green : colors.red, fontWeight: '800', fontSize: 12 }}>{t.side}</Text>
           </View>
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={s.sym}>{t.symbol}</Text>
@@ -467,5 +467,5 @@ const s = StyleSheet.create({
   posGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   side: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   reason: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 10 },
-  log: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 10, lineHeight: 16 },
+  log: { color: colors.muted, fontSize: 12, textAlign: 'center', marginTop: 10, lineHeight: 16 },
 });

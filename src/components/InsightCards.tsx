@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { luckTest } from '../analysis/luck';
@@ -137,5 +137,5 @@ const s = StyleSheet.create({
   crashName: { color: colors.text, fontWeight: '600', fontSize: 14 },
   taxRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 6 },
-  chipText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  chipText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
 });

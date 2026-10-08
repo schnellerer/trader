@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { BACKTEST_URL } from '../config';
 import Chart from '../components/Chart';
@@ -153,5 +153,5 @@ const s = StyleSheet.create({
   text: { color: colors.text, fontSize: 13, lineHeight: 20 },
   muted: { color: colors.muted, fontSize: 12 },
   live: { alignSelf: 'flex-start', backgroundColor: colors.accentBg, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2, marginTop: 4 },
-  liveText: { color: colors.accent, fontSize: 10, fontWeight: '800' },
+  liveText: { color: colors.accent, fontSize: 12, fontWeight: '800' },
 });
