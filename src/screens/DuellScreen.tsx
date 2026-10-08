@@ -84,6 +84,8 @@ export default function DuellScreen() {
     const ts = route.params?.ts;
     if (route.params?.symbol && ts !== handledTs) {
       handledTs = ts;
+      // Gibt es noch kein Duell, wird es automatisch gestartet – sonst würde die gewünschte Aktie nur im Startbildschirm hängen
+      if (!getState().me) startGame(bots.data?.startCapital ?? 10000);
       setPreset(route.params.symbol);
       setSub('trade');
     }

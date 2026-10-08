@@ -114,7 +114,7 @@ export default function DetailScreen() {
         {tab === 'fund' && <FundTab res={fundRes.data} score={fscore} loading={fundRes.loading} />}
         {tab === 'dividend' && (fundRes.loading && !fundRes.data ? <Loading text="Kennzahlen werden geladen …" /> : <DividendPanel symbol={symbol} fund={fundRes.data?.fund ?? null} fundScore={fscore?.total ?? null} cur={cur || '$'} price={meta?.price} />)}
         {tab === 'plan' && (
-          <PlanTab plan={plan} cur={cur} symbol={symbol} defaultCapital={getState().me ? equityOf(getState().me!) : 10000} onDuell={() => nav.navigate('Training', { symbol, ts: Date.now() })} />
+          <PlanTab plan={plan} cur={cur} symbol={symbol} defaultCapital={getState().me ? equityOf(getState().me!) : 10000} onDuell={() => nav.navigate('Tabs', { screen: 'Training', params: { symbol, ts: Date.now() } })} />
         )}
 
         {tab === 'overview' && (

@@ -70,7 +70,7 @@ export default function TopScreen({ view: viewProp }: { view?: View_ } = {}) {
       .slice(0, 8);
   }, [items]);
 
-  const toDuell = (symbol: string) => nav.navigate('Training', { symbol, ts: Date.now() });
+  const toDuell = (symbol: string) => nav.navigate('Tabs', { screen: 'Training', params: { symbol, ts: Date.now() } });
 
   return (
     <Screen title="Ranking" subtitle={view === 'top' ? `Höchste erwartete Rendite (${hLabel}, Basisszenario)` : 'Kaufideen – nur fürs Spiel'}>
