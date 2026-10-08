@@ -12,28 +12,40 @@ const STEP = 5;
 function Slider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [w, setW] = useState(0);
   const wRef = useRef(0);
+  const leftRef = useRef(0); // linke Kante des Schiebers im Fenster
+  const box = useRef<View>(null);
   const cb = useRef(onChange);
   cb.current = onChange;
   const pan = useMemo(() => {
-    const set = (x: number) => {
+    // Fingerposition (Bildschirm) minus linke Kante des Schiebers → Wert 0–100
+    const set = (pageX: number) => {
       if (wRef.current <= 0) return;
-      cb.current(clampRisk(Math.round(((x / wRef.current) * 100) / STEP) * STEP));
+      const frac = Math.max(0, Math.min(1, (pageX - leftRef.current) / wRef.current));
+      cb.current(clampRisk(Math.round((frac * 100) / STEP) * STEP));
     };
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (e) => set(e.nativeEvent.locationX),
-      onPanResponderMove: (e) => set(e.nativeEvent.locationX),
+      onPanResponderGrant: (e, g) => {
+        box.current?.measureInWindow((x) => {
+          leftRef.current = x;
+          set(g.x0);
+        });
+      },
+      onPanResponderMove: (_e, g) => set(g.moveX),
     });
   }, []);
   const c = value <= 35 ? colors.green : value <= 65 ? colors.text : colors.red;
   return (
     <View
-      style={{ height: 30, justifyContent: 'center' }}
+      ref={box}
+      collapsable={false}
+      style={{ height: 36, justifyContent: 'center' }}
       onLayout={(e) => {
         wRef.current = e.nativeEvent.layout.width;
         setW(e.nativeEvent.layout.width);
+        box.current?.measureInWindow((x) => (leftRef.current = x));
       }}
       {...pan.panHandlers}
     >
@@ -81,7 +93,7 @@ export default function RiskCard({ bot, serverValue, onApplied }: { bot: BotKey;
     <Card style={{ marginTop: space.xl, padding: 12 }}>
       <Pressable onPress={() => setOpen(!open)} style={s.head}>
         <Ionicons name="options" size={16} color={colors.muted} />
-        <Text style={s.title}>Risiko-Regler</Text>
+        <Text style={s.title}>Risiko · {bot === 'day' ? 'Day-Trading' : bot === 'long' ? 'Langzeit' : 'Gold'}</Text>
         <Text style={[s.valueSmall, { color: c }]}>
           {current} % · {describeRisk(bot, current).title}
         </Text>

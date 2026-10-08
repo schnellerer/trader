@@ -118,7 +118,7 @@ export default function BotsScreen() {
 
             {sub === 'overview' && <Overview bot={bot} intraday={intraday} onToday={() => setSub('today')} />}
             {sub === 'overview' && which !== 'proof' && (
-              <RiskCard bot={which} serverValue={data.data?.settings?.[which]} onApplied={() => data.reload()} />
+              <RiskCard key={which} bot={which} serverValue={data.data?.settings?.[which]} onApplied={() => data.reload()} />
             )}
             {sub === 'today' && <TodayTab bot={bot} />}
             {sub === 'positions' && <Positions bot={bot} />}
