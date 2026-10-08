@@ -7,6 +7,7 @@ import { Card, ErrorBox, Loading, SectionTitle, Stat } from '../components/UI';
 import { fmtDate, fmtNum, fmtPct } from '../format';
 import { useAsync } from '../hooks';
 import { colors, signColor, space } from '../theme';
+import TrackView from './TrackView';
 
 interface Res {
   key: string;
@@ -89,6 +90,8 @@ export default function BacktestView() {
           <ResultCard r={b.gold.hold} spx={b.gold.hold} live={false} bench />
         </>
       ) : null}
+
+      <TrackView />
 
       <SectionTitle>Grenzen des Tests</SectionTitle>
       <Card>

@@ -139,6 +139,7 @@ export interface Trade {
   reason: string;
   pnl?: number;
   pnlPct?: number;
+  heldMs?: number; // Haltedauer (nur bei Verkäufen/Cover)
 }
 
 /** Erfahrung des Day-Trading-Bots pro Aktie (Grundlage fürs „Lernen") */

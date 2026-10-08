@@ -8,8 +8,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BotsScreen from './src/screens/BotsScreen';
 import DetailScreen from './src/screens/DetailScreen';
-import DuellScreen from './src/screens/DuellScreen';
 import DiscoverScreen from './src/screens/DiscoverScreen';
+import TrainingScreen from './src/screens/TrainingScreen';
 import MarketsScreen from './src/screens/MarketsScreen';
 import MoreScreen from './src/screens/MoreScreen';
 import { initStore, useStore } from './src/store';
@@ -27,7 +27,7 @@ const icons: Record<string, [string, string]> = {
   Märkte: ['pulse', 'pulse-outline'],
   Entdecken: ['compass', 'compass-outline'],
   Bots: ['hardware-chip', 'hardware-chip-outline'],
-  Duell: ['game-controller', 'game-controller-outline'],
+  Training: ['barbell', 'barbell-outline'],
   Mehr: ['menu', 'menu-outline'],
 };
 
@@ -46,7 +46,7 @@ function Tabs() {
       <Tab.Screen name="Märkte" component={MarketsScreen} />
       <Tab.Screen name="Entdecken" component={DiscoverScreen} />
       <Tab.Screen name="Bots" component={BotsScreen} />
-      <Tab.Screen name="Duell" component={DuellScreen} />
+      <Tab.Screen name="Training" component={TrainingScreen} />
       <Tab.Screen name="Mehr" component={MoreScreen} />
     </Tab.Navigator>
   );

@@ -11,6 +11,8 @@ import { BOTS_PAGE } from '../config';
 import { fmtDate, fmtDateTime, fmtMoney, fmtNum, fmtPct, timeAgo } from '../format';
 import { useAsync } from '../hooks';
 import { BotState, Trade } from '../types';
+import TradeReplay from '../components/TradeReplay';
+import { LuckCard, StressCard, TaxCard } from '../components/InsightCards';
 import BacktestView from './BacktestView';
 import { colors, signColor, space } from '../theme';
 
@@ -223,6 +225,10 @@ function Overview({ bot, intraday, onToday }: { bot: BotState; intraday: boolean
           <Stat label="Offene Positionen" value={String(bot.positions.length)} />
         </View>
       </Card>
+
+      <LuckCard bot={bot} />
+      <StressCard bot={bot} />
+      <TaxCard bot={bot} />
     </>
   );
 }
@@ -424,6 +430,7 @@ export function TradeCard({ t }: { t: Trade }) {
         </View>
         <Text style={s.reason} numberOfLines={open ? undefined : 2}>{t.reason}</Text>
       </Pressable>
+      {open ? <TradeReplay t={t} /> : null}
     </Card>
   );
 }

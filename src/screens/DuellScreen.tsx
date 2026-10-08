@@ -14,8 +14,11 @@ import { endGame, getState, playerBuy, playerSell, refreshPlayerPrices, startGam
 import { BotState, SearchHit } from '../types';
 import { colors, radius, signColor, space } from '../theme';
 import { TradeCard } from './BotsScreen';
+import CoachView from './CoachView';
 
-type Sub = 'rank' | 'trade' | 'depot' | 'log';
+type Sub = 'rank' | 'trade' | 'depot' | 'log' | 'coach';
+
+let handledTs: number | undefined; // zuletzt übernommene Kaufidee (damit sie beim Zurückwechseln nicht erneut öffnet)
 
 interface Quote {
   symbol: string;
@@ -78,7 +81,9 @@ export default function DuellScreen() {
   // Kaufidee aus dem Ranking übernehmen
   const [preset, setPreset] = useState<string | null>(null);
   useEffect(() => {
-    if (route.params?.symbol) {
+    const ts = route.params?.ts;
+    if (route.params?.symbol && ts !== handledTs) {
+      handledTs = ts;
       setPreset(route.params.symbol);
       setSub('trade');
     }
@@ -102,23 +107,7 @@ export default function DuellScreen() {
   }
 
   return (
-    <Screen
-      title="Duell"
-      subtitle="Du gegen die Bots – mit Spielgeld"
-      right={
-        <Pressable
-          hitSlop={10}
-          onPress={() =>
-            Alert.alert('Duell beenden?', 'Dein Spiel-Depot mit allen Trades wird gelöscht. Danach kannst du neu starten.', [
-              { text: 'Abbrechen', style: 'cancel' },
-              { text: 'Beenden', style: 'destructive', onPress: endGame },
-            ])
-          }
-        >
-          <Ionicons name="refresh-circle-outline" size={26} color={colors.muted} />
-        </Pressable>
-      }
-    >
+    <Screen title="Duell" subtitle="Du gegen die Bots – mit Spielgeld">
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 50 }}
         keyboardShouldPersistTaps="handled"
@@ -142,12 +131,27 @@ export default function DuellScreen() {
             { key: 'trade', label: 'Handeln' },
             { key: 'depot', label: 'Depot' },
             { key: 'log', label: 'Trades' },
+            { key: 'coach', label: 'Coach' },
           ]}
         />
         {sub === 'rank' && <Rank me={me} bots={bots.data} loading={bots.loading} />}
         {sub === 'trade' && <Trade me={me} preset={preset} onDone={() => setSub('depot')} />}
         {sub === 'depot' && <Depot me={me} onRefresh={refreshPrices} onTrade={() => setSub('trade')} />}
         {sub === 'log' && <Log me={me} />}
+        {sub === 'coach' && <CoachView me={me} />}
+        {sub === 'depot' || sub === 'coach' ? (
+          <Button
+            label="Duell beenden & neu starten"
+            icon="refresh"
+            kind="danger"
+            onPress={() =>
+              Alert.alert('Duell beenden?', 'Dein Spiel-Depot mit allen Trades wird gelöscht. Danach kannst du neu starten.', [
+                { text: 'Abbrechen', style: 'cancel' },
+                { text: 'Beenden', style: 'destructive', onPress: endGame },
+              ])
+            }
+          />
+        ) : null}
         <Disclaimer />
       </ScrollView>
     </Screen>

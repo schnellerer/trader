@@ -62,6 +62,7 @@ export function sell(b: BotState, symbol: string, price: number, reason: string,
     reason,
     pnl,
     pnlPct: pnl / cost,
+    heldMs: Date.now() - p.openedAt,
   });
   return true;
 }
@@ -98,6 +99,7 @@ export function coverShort(b: BotState, symbol: string, price: number, reason: s
     reason,
     pnl,
     pnlPct: pnl / (p.qty * p.avgPrice),
+    heldMs: Date.now() - p.openedAt,
   });
   return true;
 }

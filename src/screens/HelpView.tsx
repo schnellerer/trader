@@ -21,8 +21,8 @@ const SECTIONS: Sec[] = [
       'Märkte: Marktampel, Indizes, deine Watchlist und aktuelle News.\n' +
       'Entdecken: Suche (Name/Ticker/ISIN), Scanner, Top 10, Kaufideen und Sektoren.\n' +
       'Bots: drei Papertrading-Bots und der „Beweis" (Backtest).\n' +
-      'Duell: du handelst selbst gegen die Bots.\n' +
-      'Mehr: Einstellungen und diese Hilfe.',
+      'Training: Duell gegen die Bots, Zeitreise und Regel-Labor.\n' +
+      'Mehr: Hilfe, Werkzeuge (Positions- und Steuerrechner) und Einstellungen.',
   },
   {
     icon: 'bonfire',
@@ -70,9 +70,43 @@ const SECTIONS: Sec[] = [
   },
   {
     icon: 'game-controller',
-    title: 'Duell',
+    title: 'Duell gegen die Bots',
     body:
       'Du bekommst dasselbe Startkapital wie die Bots und handelst echte Kurse mit Spielgeld. Die Rangliste vergleicht deine Rendite ab Spielstart fair mit den drei Bots (gleiche Gebühren). Kaufideen aus dem Ranking kannst du mit einem Tipp ins Duell übernehmen. Dein Depot liegt nur auf deinem Handy.',
+  },
+  {
+    icon: 'school',
+    title: 'Coach, Glück-oder-Können, Crash-Test',
+    body:
+      'Im Duell-Tab „Coach" und im Bots-Tab (Übersicht) findest du:\n' +
+      '• Coach: prüft deine Trades auf typische Fehler – Verlierer zu lange halten, Gewinne zu früh mitnehmen, zu große Positionen, zu viele Trades, Gebühren. Jede Aussage ist nachgerechnet, nichts geraten.\n' +
+      '• Glück oder Können?: Ein Zufallstest. Er mischt deine Trades 4.000-mal neu zusammen und zeigt, wie oft ein Trader ohne Können so gut wäre wie du. Unter 5 % = kaum Zufall. Wichtig erst ab ca. 30 Trades.\n' +
+      '• Crash-Test: Wie viel würde das Depot in einer Korrektur, 2022, Corona oder der Finanzkrise verlieren? Geschätzt über das Beta jeder Aktie.\n' +
+      '• Nach Steuern: Was von einem Gewinn nach deutscher Abgeltungsteuer übrig bliebe.',
+  },
+  {
+    icon: 'time',
+    title: 'Zeitreise',
+    body:
+      'Du handelst 52 Wochen in einem zufälligen, geheimen Zeitraum der letzten 10 Jahre – mit Crashs, Rallyes und Seitwärtsphasen. Mit „+1 Woche" oder „+4 Wochen" läuft die Zeit weiter. Am Ende wird der Zeitraum enthüllt und du siehst, wie du gegen den S&P 500 und den Momentum-Bot abgeschnitten hast.\n\nSo übst du, ohne ein Jahr zu warten und ohne Geld zu riskieren. Tipp: Setze dir vorher Stop-Loss-Regeln und halte sie ein.',
+  },
+  {
+    icon: 'flask',
+    title: 'Regel-Labor',
+    body:
+      'Baue eine eigene Handelsregel (Relative Stärke, RSI, Nähe zum Jahreshoch, Schwankung, Stop-Loss, Gewinnziel, Haltedauer …) und teste sie sofort über 10 Jahre. Du siehst Rendite, Rückgang, Trefferquote, den Vergleich mit dem S&P 500 und einen Robustheits-Check: Die Zeit wird halbiert – nur wenn die Regel in BEIDEN Hälften den Markt schlägt, ist sie vertrauenswürdiger.\n\nWarnung: Wer lange an den Reglern dreht, findet immer etwas, das in der Vergangenheit glänzt (Überanpassung). Je einfacher die Regel, desto eher hält sie auch in Zukunft.',
+  },
+  {
+    icon: 'ribbon',
+    title: 'Prognose-Zeugnis',
+    body:
+      'Der Server speichert jeden Börsentag die 30-Tage-Prognosen des Modells für die Top 20 und für 40 Zufallsaktien. Nach 30 Tagen wird nachgeprüft. Im Bots-Tab unter „Beweis" siehst du dann: War die Modell-Auswahl besser als der Zufall? Stimmen die Wahrscheinlichkeiten? Die ersten Ergebnisse gibt es 30 Tage nach dem ersten Ranking-Lauf nach dem Update – bis dahin zeigt die Seite den Sammelstand.',
+  },
+  {
+    icon: 'calculator',
+    title: 'Werkzeuge',
+    body:
+      'Positionsrechner: aus Depotgröße, Risiko pro Trade und Stop-Kurs die richtige Stückzahl. Das ist die wichtigste Regel gegen große Verluste (Profis riskieren 0,5–2 % pro Trade).\nSteuerrechner: Netto nach Abgeltungsteuer, optional mit Kirchensteuer.\nTrade-Wiederholung: Tippe in der Trade-Liste eines Bots auf einen Trade, dann auf „Trade im Chart ansehen" – Einstieg und Ausstieg werden im Kursverlauf markiert.',
   },
   {
     icon: 'notifications',

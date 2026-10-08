@@ -29,6 +29,6 @@ jobs:
         run: |
           git config user.name "ranking-bot"
           git config user.email "ranking-bot@users.noreply.github.com"
-          git add data/ranking.json data/scan.json data/earnings.json
+          git add data/ranking.json data/scan.json data/earnings.json data/predictions.json data/track.json
           git diff --staged --quiet || git commit -m "Ranking aktualisiert"
           for i in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done

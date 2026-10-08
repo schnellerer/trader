@@ -13,6 +13,7 @@ import { DE_STOCKS } from '../src/analysis/universe';
 import { pctChange, rsi, sma } from '../src/analysis/indicators';
 import { assessBias, biasLabel, driftStats, expectedReturn } from '../src/analysis/model';
 import { notify } from './notify';
+import { updateTrack } from './track';
 
 type Liq = 'large' | 'mid' | 'small' | 'micro';
 const BAD_NAME = /warrant|right|unit|preferred|depositary share|notes due|trust|fund|etn|acquisition corp|spac|% /i;
@@ -187,6 +188,7 @@ async function main() {
     }),
   );
   writeFileSync('data/earnings.json', JSON.stringify({ generatedAt: Date.now(), map: earnings }));
+  if (!limit) updateTrack(withRs.map((x) => ({ symbol: x.symbol, price: x.price, expected: x.expected, score: x.score, vol: x.vol, rankKey: x.rankKey, liq: x.liq })));
   console.log(`Fertig in ${Math.round((Date.now() - t0) / 1000)} s: ${items.length} von ${list.length} ausgewertet`, counts);
   if (items.length < Math.min(50, list.length * 0.3)) throw new Error('Zu wenige Ergebnisse – vermutlich blockiert Yahoo die Anfragen.');
 

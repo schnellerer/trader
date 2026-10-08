@@ -100,7 +100,7 @@ export function scenarioFor(item: { expected: number; score: number; vol: number
   const mu = drift + tilt * (years <= 1 ? 1 : years <= 3 ? 0.5 : 0);
   const m = (mu - (item.vol * item.vol) / 2) * years;
   const s = item.vol * Math.sqrt(years);
-  return { bull: Math.exp(m + s) - 1, base: Math.exp(m) - 1, bear: Math.exp(m - s) - 1 };
+  return { bull: Math.exp(m + s) - 1, base: Math.exp(m) - 1, bear: Math.exp(m - s) - 1, probProfit: normCdf(m / s) };
 }
 
 /** Zeiträume im Ranking */

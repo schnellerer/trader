@@ -15,9 +15,11 @@ interface Props {
   onScrub?: (p: Pt | null) => void;
   baseline?: number; // gestrichelte Referenzlinie (z.B. Vortagesschluss/Startkapital)
   minimal?: boolean; // Sparkline ohne Interaktion
+  marks?: { t: number; color: string }[]; // Markierungen (z. B. Einstieg/Ausstieg eines Trades)
+  compare?: Pt[]; // zweite Linie zum Vergleich (gleicher Zeitraum, gleiche Skala), z. B. S&P 500
 }
 
-export default function Chart({ data, height = 200, color, onScrub, baseline, minimal }: Props) {
+export default function Chart({ data, height = 200, color, onScrub, baseline, minimal, marks, compare }: Props) {
   const [w, setW] = useState(0);
   const [idx, setIdx] = useState<number | null>(null);
   const wRef = useRef(0);
@@ -38,6 +40,10 @@ export default function Chart({ data, height = 200, color, onScrub, baseline, mi
       if (d.v < min) min = d.v;
       if (d.v > max) max = d.v;
     });
+    compare?.forEach((d) => {
+      if (d.v < min) min = d.v;
+      if (d.v > max) max = d.v;
+    });
     if (baseline != null) {
       min = Math.min(min, baseline);
       max = Math.max(max, baseline);
@@ -50,8 +56,27 @@ export default function Chart({ data, height = 200, color, onScrub, baseline, mi
       d += `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(p.v).toFixed(1)} `;
     });
     const area = `${d} L${x(data.length - 1).toFixed(1)},${height} L${x(0).toFixed(1)},${height} Z`;
-    return { d, area, x, y };
-  }, [data, w, height, baseline, pad]);
+    let cmp = '';
+    if (compare && compare.length > 1)
+      compare.forEach((p, i) => {
+        const cx = pad + (i / (compare.length - 1)) * (w - pad * 2);
+        cmp += `${i === 0 ? 'M' : 'L'}${cx.toFixed(1)},${y(p.v).toFixed(1)} `;
+      });
+    // Markierungen: nächstgelegener Datenpunkt zur Zeit
+    const pins = (marks ?? []).map((m) => {
+      let best = 0;
+      let bd = Infinity;
+      data.forEach((p, i) => {
+        const dd = Math.abs(p.t - m.t);
+        if (dd < bd) {
+          bd = dd;
+          best = i;
+        }
+      });
+      return { cx: x(best), cy: y(data[best].v), color: m.color };
+    });
+    return { d, area, x, y, cmp, pins };
+  }, [data, w, height, baseline, pad, compare, marks]);
 
   const pan = useMemo(() => {
     const set = (px: number) => {
@@ -101,7 +126,11 @@ export default function Chart({ data, height = 200, color, onScrub, baseline, mi
             <Line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke={colors.border} strokeDasharray="4,4" strokeWidth={1} />
           )}
           <Path d={geo.area} fill={`url(#${gid})`} />
+          {geo.cmp ? <Path d={geo.cmp} stroke={colors.muted} strokeWidth={1.5} strokeDasharray="5,4" fill="none" strokeLinejoin="round" /> : null}
           <Path d={geo.d} stroke={line} strokeWidth={minimal ? 1.5 : 2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+          {geo.pins.map((p, i) => (
+            <Circle key={i} cx={p.cx} cy={p.cy} r={6} fill={p.color} stroke={colors.bg} strokeWidth={2} />
+          ))}
           {idx != null && (
             <>
               <Line x1={geo.x(idx)} x2={geo.x(idx)} y1={0} y2={height} stroke={colors.muted} strokeWidth={1} />
