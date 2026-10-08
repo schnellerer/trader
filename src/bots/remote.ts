@@ -1,3 +1,4 @@
+import { Regime } from '../analysis/regime';
 import { BOTS_API_URL, BOTS_URL } from '../config';
 import { BotState } from '../types';
 
@@ -7,6 +8,7 @@ export interface BotsFile {
   day: BotState;
   long: BotState;
   gold?: BotState; // fehlt in älteren Dateien
+  regime?: Regime; // Marktampel zum Zeitpunkt des letzten Laufs
 }
 
 async function get(url: string, headers: Record<string, string> = {}): Promise<{ status: number; data: BotsFile | null }> {

@@ -1,6 +1,11 @@
 // Adresse der täglich berechneten Ranking-Datei (GitHub). Leer lassen = App nutzt nur die lokale Auswahl von 44 Aktien.
 export const RANKING_URL = 'https://raw.githubusercontent.com/schnellerer/trader/main/data/ranking.json';
 
+// Weitere täglich berechnete Dateien (liegen neben ranking.json)
+const DATA_BASE = RANKING_URL.replace(/ranking\.json$/, '');
+export const SCAN_URL = `${DATA_BASE}scan.json`; // alle ausgewerteten Aktien für den Scanner
+export const BACKTEST_URL = `${DATA_BASE}backtest.json`; // Ergebnisse der Strategie-Tests
+
 // Stand der Trading-Bots (wird vom GitHub-Server fortlaufend aktualisiert)
 export const BOTS_URL = 'https://raw.githubusercontent.com/schnellerer/trader/data/bots.json';
 

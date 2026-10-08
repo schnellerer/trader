@@ -1,5 +1,8 @@
 /**
- * Rechnet das Ranking für alle US-Aktien (inkl. Small Caps) + DAX durch und schreibt data/ranking.json.
+ * Rechnet das Ranking für alle US-Aktien (inkl. Small Caps) + DAX durch und schreibt
+ *   data/ranking.json  (beste 60 je Größenklasse, mit Begründung)
+ *   data/scan.json     (ALLE ausgewerteten Aktien kompakt, für den Scanner in der App)
+ *   data/earnings.json (Quartalszahlen-Termine der nächsten 2 Wochen)
  * Läuft kostenlos per GitHub Actions (siehe .github/workflows/ranking.yml) oder lokal:
  *   npx tsx scripts/buildRanking.ts            (alles)
  *   LIMIT=100 npx tsx scripts/buildRanking.ts  (Test mit 100 Aktien)
@@ -7,11 +10,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { getChart, pool } from '../src/api/yahoo';
 import { DE_STOCKS } from '../src/analysis/universe';
-import { pctChange, sma } from '../src/analysis/indicators';
+import { pctChange, rsi, sma } from '../src/analysis/indicators';
 import { assessBias, biasLabel, driftStats, expectedReturn } from '../src/analysis/model';
+import { notify } from './notify';
 
 type Liq = 'large' | 'mid' | 'small' | 'micro';
 const BAD_NAME = /warrant|right|unit|preferred|depositary share|notes due|trust|fund|etn|acquisition corp|spac|% /i;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 async function usSymbols(): Promise<{ symbol: string; name: string }[]> {
   const out: { symbol: string; name: string }[] = [];
@@ -24,13 +29,32 @@ async function usSymbols(): Promise<{ symbol: string; name: string }[]> {
     const [sym, name, , , etf, , test] = line.split('|');
     if (sym && test === 'N' && etf === 'N') out.push({ symbol: sym, name });
   }
-  return out
-    .filter((x) => /^[A-Z]{1,5}$/.test(x.symbol) && !BAD_NAME.test(x.name))
-    .map((x) => ({ symbol: x.symbol, name: x.name }));
+  return out.filter((x) => /^[A-Z]{1,5}$/.test(x.symbol) && !BAD_NAME.test(x.name));
+}
+
+/** Quartalszahlen-Termine (Nasdaq-Kalender, kostenlos) für die nächsten 14 Tage */
+async function earningsMap(): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  const days: string[] = [];
+  for (let i = 0; i < 15; i++) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + i);
+    if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) days.push(d.toISOString().slice(0, 10));
+  }
+  await pool(days, 3, async (day) => {
+    const r = await fetch(`https://api.nasdaq.com/api/calendar/earnings?date=${day}`, {
+      headers: { 'User-Agent': UA, Accept: 'application/json, text/plain, */*', Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' },
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j: any = await r.json();
+    for (const row of j?.data?.rows ?? []) if (row.symbol && !map[row.symbol]) map[row.symbol] = day;
+  });
+  return map;
 }
 
 const liqClass = (dollarVol: number): Liq => (dollarVol >= 100e6 ? 'large' : dollarVol >= 10e6 ? 'mid' : dollarVol >= 1e6 ? 'small' : 'micro');
 const pct1 = (v: number) => (v * 100).toFixed(1).replace('.', ',');
+const mean = (a: number[]) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
 
 async function main() {
   const t0 = Date.now();
@@ -38,6 +62,14 @@ async function main() {
   const limit = Number(process.env.LIMIT || 0);
   if (limit) list = list.slice(0, limit);
   console.log(`Prüfe ${list.length} Aktien …`);
+
+  let earnings: Record<string, string> = {};
+  try {
+    earnings = await earningsMap();
+    console.log(`Earnings-Termine: ${Object.keys(earnings).length}`);
+  } catch (e: any) {
+    console.warn('Earnings-Kalender nicht erreichbar:', e?.message);
+  }
 
   let done = 0;
   let failed = 0;
@@ -54,8 +86,8 @@ async function main() {
     if (cs.length < 200) return null;
     const closes = cs.map((c) => c.c);
     const price = closes[closes.length - 1];
-    const last = cs.slice(-30);
-    const dollarVol = last.reduce((s, c) => s + c.c * c.v, 0) / last.length;
+    const last30 = cs.slice(-30);
+    const dollarVol = last30.reduce((s, c) => s + c.c * c.v, 0) / last30.length;
     const isEur = d.meta.currency === 'EUR';
     if (!isEur && d.meta.currency !== 'USD') return null;
     if (price < 1 || dollarVol < 100_000) return null;
@@ -67,6 +99,11 @@ async function main() {
     const expected = expectedReturn(stats, score, 1);
     const s200 = sma(closes, 200);
     const m6 = pctChange(closes, 126);
+    const hi52 = Math.max(...closes);
+    const vols = cs.map((c) => c.v);
+    const volSurge = mean(vols.slice(-5)) / (mean(vols.slice(-50)) || 1);
+    const momentum =
+      0.4 * pctChange(closes, 63) + 0.2 * pctChange(closes, 126) + 0.2 * pctChange(closes, 189) + 0.2 * (price / closes[0] - 1);
     const liq = liqClass(isEur ? dollarVol * 1.08 : dollarVol);
     const pos = signals.filter((s) => s.value > 0).map((s) => s.text);
     const neg = signals.filter((s) => s.value < 0).map((s) => s.text);
@@ -92,22 +129,74 @@ async function main() {
       rankKey: expected / (0.5 + stats.vol),
       liq,
       dollarVol,
+      momentum,
+      rsi14: rsi(closes, 14),
+      hi52Dist: price / hi52 - 1,
+      volSurge,
+      m1: pctChange(closes, 21),
+      m6,
+      m12: price / closes[0] - 1,
+      earnings: earnings[symbol],
     };
   });
 
-  const items = res.filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.rankKey - a.rankKey);
+  const items = res.filter((x): x is NonNullable<typeof x> => !!x);
+
+  // Relative Stärke: Rang des Momentums unter allen ausgewerteten Aktien (1 = schwächste, 99 = stärkste)
+  const byMom = [...items].sort((a, b) => a.momentum - b.momentum);
+  const rsOf = new Map(byMom.map((x, i) => [x.symbol, Math.max(1, Math.min(99, Math.round(((i + 1) / byMom.length) * 99)))]));
+  const withRs = items.map((x) => ({ ...x, rs: rsOf.get(x.symbol)! })).sort((a, b) => b.rankKey - a.rankKey);
+
   // Pro Liquiditätsklasse die besten 60 behalten (hält die Datei klein)
-  const keep = (['large', 'mid', 'small', 'micro'] as Liq[]).flatMap((c) => items.filter((x) => x.liq === c).slice(0, 60));
-  keep.sort((a, b) => b.rankKey - a.rankKey);
-  const counts = Object.fromEntries((['large', 'mid', 'small', 'micro'] as Liq[]).map((c) => [c, items.filter((x) => x.liq === c).length]));
+  const classes: Liq[] = ['large', 'mid', 'small', 'micro'];
+  const keep = classes
+    .flatMap((c) => withRs.filter((x) => x.liq === c).slice(0, 60))
+    .sort((a, b) => b.rankKey - a.rankKey)
+    .map(({ momentum, rsi14, hi52Dist, volSurge, m1, m6, m12, ...rest }) => rest);
+  const counts = Object.fromEntries(classes.map((c) => [c, withRs.filter((x) => x.liq === c).length]));
+
+  // Scanner-Datei: alle Aktien, kompakt als Zahlenreihen
+  const r4 = (v: number) => Math.round(v * 10000) / 10000;
+  const scan = withRs.map((x) => [
+    x.symbol,
+    x.name.slice(0, 32),
+    x.liq,
+    Math.round(x.price * 100) / 100,
+    x.currency,
+    x.rs,
+    Math.round(x.rsi14),
+    r4(x.hi52Dist),
+    Math.round(x.volSurge * 100) / 100,
+    r4(x.m1),
+    r4(x.m6),
+    r4(x.m12),
+    x.score,
+    r4(x.vol),
+    x.aboveSma200 ? 1 : 0,
+    x.earnings ?? '',
+  ]);
 
   mkdirSync('data', { recursive: true });
+  writeFileSync('data/ranking.json', JSON.stringify({ generatedAt: Date.now(), requested: list.length, analyzed: items.length, counts, items: keep }));
   writeFileSync(
-    'data/ranking.json',
-    JSON.stringify({ generatedAt: Date.now(), requested: list.length, analyzed: items.length, counts, items: keep }),
+    'data/scan.json',
+    JSON.stringify({
+      generatedAt: Date.now(),
+      fields: ['symbol', 'name', 'liq', 'price', 'currency', 'rs', 'rsi', 'hi52', 'vol', 'm1', 'm6', 'm12', 'score', 'sigma', 'up', 'earnings'],
+      rows: scan,
+    }),
   );
+  writeFileSync('data/earnings.json', JSON.stringify({ generatedAt: Date.now(), map: earnings }));
   console.log(`Fertig in ${Math.round((Date.now() - t0) / 1000)} s: ${items.length} von ${list.length} ausgewertet`, counts);
   if (items.length < Math.min(50, list.length * 0.3)) throw new Error('Zu wenige Ergebnisse – vermutlich blockiert Yahoo die Anfragen.');
+
+  // Handy-Benachrichtigung mit den stärksten Ausbrüchen (nur große/mittlere Werte, falls NTFY_TOPIC gesetzt ist)
+  const breakouts = withRs
+    .filter((x) => (x.liq === 'large' || x.liq === 'mid') && x.hi52Dist > -0.03 && x.volSurge > 1.5 && x.aboveSma200 && x.rs >= 80)
+    .sort((a, b) => b.rs - a.rs)
+    .slice(0, 5);
+  if (breakouts.length)
+    await notify('Scanner: Ausbruchs-Kandidaten', breakouts.map((x) => `${x.symbol} (RS ${x.rs}, Volumen ×${x.volSurge.toFixed(1)})`).join('\n'));
 }
 
 main().catch((e) => {

@@ -6,8 +6,13 @@ import { Bias } from '../types';
 import { biasLabel } from '../analysis/model';
 import { colors, radius, space } from '../theme';
 
+/** Wenn true, zeichnet Screen nur den Inhalt (ohne Titelzeile) – für Bildschirme, die in einem anderen Tab eingebettet sind */
+export const EmbeddedCtx = React.createContext(false);
+
 export function Screen({ title, subtitle, right, children }: { title: string; subtitle?: string; right?: React.ReactNode; children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  const embedded = React.useContext(EmbeddedCtx);
+  if (embedded) return <View style={{ flex: 1 }}>{children}</View>;
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 8 }}>
       <View style={s.header}>

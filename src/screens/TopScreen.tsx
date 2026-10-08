@@ -16,7 +16,7 @@ type Sort = 'risk' | 'return';
 
 const LIQ_LABEL: Record<string, string> = { large: 'Große Werte', mid: 'Mittlere Werte', small: 'Kleine Werte', micro: 'Micro-Caps' };
 
-export default function TopScreen() {
+export default function TopScreen({ view: viewProp }: { view?: View_ } = {}) {
   const nav = useNavigation<any>();
   const [items, setItems] = useState<RankItem[] | null>(null);
   const [err, setErr] = useState('');
@@ -24,7 +24,8 @@ export default function TopScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
-  const [view, setView] = useState<View_>('top');
+  const [viewState, setView] = useState<View_>('top');
+  const view = viewProp ?? viewState;
   const [horizon, setHorizon] = useState<Horizon>('30d');
   const [sort, setSort] = useState<Sort>('risk');
 
@@ -85,14 +86,16 @@ export default function TopScreen() {
           />
         }
       >
-        <Segmented
-          value={view}
-          onChange={setView}
-          options={[
-            { key: 'top', label: 'Top 10' },
-            { key: 'ideas', label: 'Kaufideen' },
-          ]}
-        />
+        {viewProp ? null : (
+          <Segmented
+            value={view}
+            onChange={setView}
+            options={[
+              { key: 'top', label: 'Top 10' },
+              { key: 'ideas', label: 'Kaufideen' },
+            ]}
+          />
+        )}
 
         {!items && !err && <Loading text={`Analysiere Aktien … ${prog[0]} / ${prog[1] > 1 ? prog[1] : '…'}`} />}
         {err && !items ? <ErrorBox text={err} onRetry={() => load(true)} /> : null}

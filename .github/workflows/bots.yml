@@ -38,6 +38,7 @@ jobs:
         env:
           MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mode || 'auto' }}
           DATA_DIR: botdata
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
         run: npx --yes tsx@4 scripts/runBots.ts
       - name: Stand speichern
         if: always()

@@ -38,6 +38,28 @@ export function atr(c: { h: number; l: number; c: number }[], n = 14): number {
   return sum / n;
 }
 
+/** RSI an Position i (nutzt nur Werte bis i, kein Kopieren) */
+export function rsiAt(closes: number[], i: number, n = 14): number {
+  if (i < n) return NaN;
+  let gain = 0;
+  let loss = 0;
+  for (let k = i - n + 1; k <= i; k++) {
+    const d = closes[k] - closes[k - 1];
+    if (d >= 0) gain += d;
+    else loss -= d;
+  }
+  if (loss === 0) return 100;
+  return 100 - 100 / (1 + gain / loss);
+}
+
+/** ATR an Position i */
+export function atrAt(c: { h: number; l: number; c: number }[], i: number, n = 14): number {
+  if (i < n) return NaN;
+  let sum = 0;
+  for (let k = i - n + 1; k <= i; k++) sum += Math.max(c[k].h - c[k].l, Math.abs(c[k].h - c[k - 1].c), Math.abs(c[k].l - c[k - 1].c));
+  return sum / n;
+}
+
 export const logReturns = (closes: number[]) => {
   const r: number[] = [];
   for (let i = 1; i < closes.length; i++) if (closes[i - 1] > 0 && closes[i] > 0) r.push(Math.log(closes[i] / closes[i - 1]));

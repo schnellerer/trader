@@ -3,6 +3,7 @@ import { DAY_UNIVERSE } from '../analysis/universe';
 import { atr, ema, rsi } from '../analysis/indicators';
 import { fmtPct } from '../format';
 import { BotState } from '../types';
+import { earningsImminent, BotCtx } from './ctx';
 import { badHour, dayLossLocked, isBanned, learnFrom, strictMode, symbolWeight } from './learn';
 import { buy, clone, closePosition, equityOf, finish } from './sim';
 
@@ -80,7 +81,7 @@ async function snapshot(symbol: string): Promise<Snap | null> {
 const sameDay = (a: number, b: number) => new Date(a).toDateString() === new Date(b).toDateString();
 
 /** Ein Handelsdurchgang des Day-Trading-Bots auf 1-Minuten-Kerzen. Reine Funktion, läuft auf dem GitHub-Server. */
-export async function stepDayBot(prev: BotState): Promise<BotState> {
+export async function stepDayBot(prev: BotState, ctx?: BotCtx): Promise<BotState> {
   const snaps = (await pool(DAY_UNIVERSE, 6, snapshot)).filter((x): x is Snap => !!x);
   if (!snaps.length) throw new Error('Keine Intraday-Daten erreichbar');
   const bySym = new Map(snaps.map((s) => [s.symbol, s]));
@@ -128,7 +129,9 @@ export async function stepDayBot(prev: BotState): Promise<BotState> {
   newClosed.forEach((t) => learnFrom(b, t));
 
   // ---- Neue Käufe ----
-  const strict = strictMode(b);
+  // Marktampel rot → strenger Modus (höhere Hürden, halbe Positionsgröße)
+  const redMarket = ctx?.regime?.state === 'red';
+  const strict = strictMode(b) || redMarket;
   const anyOpen = snaps.some((s) => s.open);
   if (!anyOpen) log.push('Börsen aktuell geschlossen – keine neuen Käufe.');
   else if (dayLossLocked(b)) log.push('Tages-Verlustlimit (−1,5 %) erreicht – heute keine neuen Trades.');
@@ -138,7 +141,7 @@ export async function stepDayBot(prev: BotState): Promise<BotState> {
     const maxRsi = strict ? 68 : 72;
     const minMom = strict ? 0.0015 : 0.0005;
     const candidates = snaps
-      .filter((s) => s.open && !s.closingSoon && !isBanned(b, s.symbol))
+      .filter((s) => s.open && !s.closingSoon && !isBanned(b, s.symbol) && !earningsImminent(ctx, s.symbol))
       .filter((s) => s.trendUp && s.rsi >= minRsi && s.rsi <= maxRsi && s.dayChg > 0.002 && s.mom10 > minMom && (!strict || s.volSpike > 1))
       .filter((s) => !b.positions.some((p) => p.symbol === s.symbol))
       .map((s) => ({ s, score: (s.dayChg + s.mom10 * 3 + s.mom30 + Math.min(s.volSpike, 3) * 0.002) * symbolWeight(b, s.symbol) }))
@@ -164,7 +167,8 @@ export async function stepDayBot(prev: BotState): Promise<BotState> {
         log.push(`Kauf ${s.symbol}`);
       }
     }
-    if (strict) log.push('Strenger Modus aktiv (viele Verluste zuletzt)');
+    if (redMarket) log.push('Marktampel ROT – Day-Bot im strengen Modus');
+    else if (strict) log.push('Strenger Modus aktiv (viele Verluste zuletzt)');
   }
 
   finish(b, log.length ? log.join(', ') : 'Keine Handelssignale.');

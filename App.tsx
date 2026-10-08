@@ -9,10 +9,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BotsScreen from './src/screens/BotsScreen';
 import DetailScreen from './src/screens/DetailScreen';
 import DuellScreen from './src/screens/DuellScreen';
+import DiscoverScreen from './src/screens/DiscoverScreen';
 import MarketsScreen from './src/screens/MarketsScreen';
-import SearchScreen from './src/screens/SearchScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
-import TopScreen from './src/screens/TopScreen';
+import MoreScreen from './src/screens/MoreScreen';
 import { initStore, useStore } from './src/store';
 import { colors } from './src/theme';
 
@@ -26,11 +25,10 @@ const theme = {
 
 const icons: Record<string, [string, string]> = {
   Märkte: ['pulse', 'pulse-outline'],
-  Suche: ['search', 'search-outline'],
-  Ranking: ['trophy', 'trophy-outline'],
+  Entdecken: ['compass', 'compass-outline'],
   Bots: ['hardware-chip', 'hardware-chip-outline'],
   Duell: ['game-controller', 'game-controller-outline'],
-  Mehr: ['settings', 'settings-outline'],
+  Mehr: ['menu', 'menu-outline'],
 };
 
 function Tabs() {
@@ -46,11 +44,10 @@ function Tabs() {
       })}
     >
       <Tab.Screen name="Märkte" component={MarketsScreen} />
-      <Tab.Screen name="Suche" component={SearchScreen} />
-      <Tab.Screen name="Ranking" component={TopScreen} />
+      <Tab.Screen name="Entdecken" component={DiscoverScreen} />
       <Tab.Screen name="Bots" component={BotsScreen} />
       <Tab.Screen name="Duell" component={DuellScreen} />
-      <Tab.Screen name="Mehr" component={SettingsScreen} />
+      <Tab.Screen name="Mehr" component={MoreScreen} />
     </Tab.Navigator>
   );
 }

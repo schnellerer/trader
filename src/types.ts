@@ -83,6 +83,28 @@ export interface RankItem {
   rankKey: number;
   liq?: 'large' | 'mid' | 'small' | 'micro'; // Handelsvolumen-Klasse (nur Server-Ranking)
   dollarVol?: number;
+  rs?: number; // Relative Stärke 1-99 gegenüber allen ausgewerteten Aktien
+  earnings?: string; // nächster Quartalszahlen-Termin (YYYY-MM-DD)
+}
+
+/** Zeile aus data/scan.json (alle ausgewerteten Aktien, kompakt) */
+export interface ScanRow {
+  symbol: string;
+  name: string;
+  liq: 'large' | 'mid' | 'small' | 'micro';
+  price: number; // EUR (App rechnet USD um)
+  currency: string;
+  rs: number;
+  rsi: number;
+  hi52: number; // Abstand zum 52-Wochen-Hoch (−0,05 = 5 % darunter)
+  vol: number; // Volumen-Schub: 5-Tage-Schnitt / 50-Tage-Schnitt
+  m1: number;
+  m6: number;
+  m12: number;
+  score: number;
+  sigma: number; // Schwankung p.a.
+  up: boolean; // über der 200-Tage-Linie
+  earnings?: string;
 }
 
 export interface RankingMeta {

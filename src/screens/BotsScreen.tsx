@@ -11,17 +11,19 @@ import { BOTS_PAGE } from '../config';
 import { fmtDate, fmtDateTime, fmtMoney, fmtNum, fmtPct, timeAgo } from '../format';
 import { useAsync } from '../hooks';
 import { BotState, Trade } from '../types';
+import BacktestView from './BacktestView';
 import { colors, signColor, space } from '../theme';
 
-type Which = 'day' | 'long' | 'gold';
+type Which = 'day' | 'long' | 'gold' | 'proof';
 type Sub = 'overview' | 'today' | 'positions' | 'trades' | 'days' | 'learn';
 
 const GOAL = 0.3;
 
 const DESC: Record<Which, string> = {
   day: 'Handelt innerhalb des Tages auf 1-Minuten-Kerzen (Trend, VWAP, Momentum, Volumen), mit Stop-Loss und Gewinnziel, und schließt abends alles. Lernt aus eigenen Fehlern. Läuft auf dem Server etwa alle 5 Minuten zu den Börsenzeiten – auch bei geschlossener App.',
-  long: 'Kauft die am besten bewerteten großen und mittleren Aktien des Rankings, streut auf 8 Positionen und hält Wochen bis Monate. Läuft auf dem Server täglich – auch bei geschlossener App.',
-  gold: 'Handelt Gold (XAU/USD) auf 5-Minuten-Kerzen mit klassischen Strategien: Breakout, Pullback im Trend und Range-Trading. Long und Short, Stop-Loss 2,5 × ATR, Ziel 2:1, max. 1 % Risiko pro Trade, kein Hebel. Läuft auf dem Server laufend Mo–Fr.',
+  long: 'Momentum-Strategie mit Trendfilter (im Backtest die beste): kauft aus den Aktien im Aufwärtstrend die mit der höchsten Relative Stärke, streut auf 8 große/mittlere Werte und meidet Käufe vor Quartalszahlen. Hält Wochen bis Monate. Läuft auf dem Server zweimal täglich – auch bei geschlossener App.',
+  gold: 'Handelt Gold (XAU/USD) auf 5-Minuten-Kerzen mit der Breakout-Strategie (Ausbruch über das 12-Stunden-Hoch/-Tief im Trend, nur zu Haupt-Handelszeiten). Long und Short, Stop-Loss 2,5 × ATR, Ziel 2:1, max. 1 % Risiko pro Trade, kein Hebel. Im Backtest etwa break-even – ein Gewinn ist nicht belegt.',
+  proof: 'Beweis statt Hoffnung: Hätten die Strategien in der Vergangenheit Geld verdient? Alle Ergebnisse stammen aus Rückrechnungen mit den echten Kursen der letzten Jahre.',
 };
 
 export default function BotsScreen() {
@@ -29,7 +31,7 @@ export default function BotsScreen() {
   const [sub, setSub] = useState<Sub>('overview');
   const [refreshing, setRefreshing] = useState(false);
   const data = useAsync(fetchBots, []);
-  const bot = data.data ? data.data[which] ?? null : null;
+  const bot = data.data && which !== 'proof' ? data.data[which] ?? null : null;
 
   // Die Bots laufen auf dem Server – die App holt nur den neuesten Stand (jede Minute)
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function BotsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const intraday = which !== 'long';
+  const intraday = which === 'day' || which === 'gold';
   const subOptions: { key: Sub; label: string }[] = intraday
     ? [
         { key: 'overview', label: 'Übersicht' },
@@ -80,13 +82,15 @@ export default function BotsScreen() {
             { key: 'day', label: 'Day-Trading' },
             { key: 'long', label: 'Langzeit' },
             { key: 'gold', label: 'Gold' },
+            { key: 'proof', label: 'Beweis' },
           ]}
         />
         <Text style={s.desc}>{DESC[which]}</Text>
 
-        {data.loading && !data.data ? <Loading text="Bot-Stand wird geladen …" /> : null}
-        {data.error && !data.data ? <ErrorBox text={data.error} onRetry={data.reload} /> : null}
-        {data.data === null && !data.loading && !data.error ? (
+        {which === 'proof' ? <BacktestView /> : null}
+        {which !== 'proof' && data.loading && !data.data ? <Loading text="Bot-Stand wird geladen …" /> : null}
+        {which !== 'proof' && data.error && !data.data ? <ErrorBox text={data.error} onRetry={data.reload} /> : null}
+        {which !== 'proof' && data.data === null && !data.loading && !data.error ? (
           <Card style={{ marginTop: space.l }}>
             <Text style={{ color: colors.text, fontWeight: '700' }}>Die Bots haben noch nicht gehandelt</Text>
             <Text style={[s.muted, { marginTop: 6, lineHeight: 18 }]}>
@@ -95,7 +99,7 @@ export default function BotsScreen() {
             <Button label="GitHub-Seite öffnen" icon="open-outline" kind="ghost" onPress={() => Linking.openURL(BOTS_PAGE)} />
           </Card>
         ) : null}
-        {data.data && !bot ? (
+        {which !== 'proof' && data.data && !bot ? (
           <Card style={{ marginTop: space.l }}>
             <Text style={s.muted}>
               In den geladenen Daten ist dieser Bot noch nicht enthalten (Stand der Daten: {fmtDateTime(data.data.updatedAt)}, {timeAgo(data.data.updatedAt)}). Nach unten ziehen zum Neuladen. Wenn der Stand dann immer noch alt ist, hat der Server noch nicht neu gespeichert.

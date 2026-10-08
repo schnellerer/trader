@@ -5,6 +5,7 @@ import { getChart, pool } from '../api/yahoo';
 import { getMarketNews } from '../api/news';
 import { INDICES } from '../analysis/universe';
 import Chart from '../components/Chart';
+import MarketLight from '../components/MarketLight';
 import { NewsRow, PctText } from '../components/Rows';
 import { Card, ErrorBox, Loading, Screen, SectionTitle } from '../components/UI';
 import { fmtNum } from '../format';
@@ -57,6 +58,7 @@ export default function MarketsScreen() {
         contentContainerStyle={{ paddingHorizontal: space.l, paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.accent} />}
       >
+        <MarketLight />
         <SectionTitle>Indizes & Märkte</SectionTitle>
         {idx.loading && !idx.data ? (
           <Loading />
