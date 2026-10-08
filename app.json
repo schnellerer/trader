@@ -23,13 +23,22 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fdb0e983-c238-4482-bb69-20df1801054e",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000
+    },
     "extra": {
       "eas": {
         "projectId": "fdb0e983-c238-4482-bb69-20df1801054e"
       }
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-updates"
     ]
   }
 }

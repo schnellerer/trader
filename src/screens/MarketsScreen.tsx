@@ -1,13 +1,13 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getChart, pool } from '../api/yahoo';
 import { getMarketNews } from '../api/news';
 import { INDICES } from '../analysis/universe';
 import Chart from '../components/Chart';
 import MarketLight from '../components/MarketLight';
 import { NewsRow, PctText } from '../components/Rows';
-import { Card, ErrorBox, Loading, Screen, SectionTitle } from '../components/UI';
+import { Card, ChipTabs, ErrorBox, Loading, Screen, SectionTitle } from '../components/UI';
 import { fmtNum } from '../format';
 import { useAsync } from '../hooks';
 import { useStore } from '../store';
@@ -45,6 +45,19 @@ export default function MarketsScreen() {
   const wl = useAsync(() => loadQuotes(watch.map((symbol) => ({ symbol }))), [watch.join(',')]);
   const news = useAsync(getMarketNews, []);
   const [refreshing, setRefreshing] = useState(false);
+  const [lang, setLang] = useState<'all' | 'de' | 'en' | 'official'>('all');
+  const lastNews = useRef(Date.now());
+
+  // Beim Zurückkehren auf den Tab (z. B. nach Änderung der News-Quellen) die News neu laden, höchstens alle 3 Minuten
+  useFocusEffect(
+    useCallback(() => {
+      if (Date.now() - lastNews.current > 3 * 60_000) {
+        lastNews.current = Date.now();
+        news.reload();
+      }
+    }, [news]),
+  );
+  const shownNews = (news.data ?? []).filter((n) => (lang === 'all' ? true : lang === 'official' ? n.official : n.lang === lang));
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -108,13 +121,27 @@ export default function MarketsScreen() {
         )}
 
         <SectionTitle>Aktuelle News</SectionTitle>
-        <Text style={[s.small, { marginBottom: 4 }]}>Quellen: Google News, Yahoo Finance, Tagesschau, Handelsblatt · grüner/roter Punkt = Stimmung der Schlagzeile</Text>
+        <View style={{ marginBottom: 8 }}>
+          <ChipTabs
+            value={lang}
+            onChange={setLang}
+            options={[
+              { key: 'all', label: 'Alle' },
+              { key: 'de', label: 'Deutsch' },
+              { key: 'en', label: 'Englisch' },
+              { key: 'official', label: '✔ Offiziell' },
+            ]}
+          />
+        </View>
+        <Text style={[s.small, { marginBottom: 4 }]}>
+          {news.data ? `${new Set(news.data.map((n) => n.source)).size} Quellen · ` : ''}grüner/roter Punkt = Stimmung der Schlagzeile · Quellen auswählen unter Mehr → Einstellungen
+        </Text>
         {news.loading && !news.data ? (
           <Loading text="News werden geladen …" />
         ) : news.error && !news.data ? (
           <ErrorBox text={news.error} onRetry={news.reload} />
         ) : (
-          news.data?.slice(0, 40).map((n, i) => <NewsRow key={i} n={n} />)
+          shownNews.slice(0, 50).map((n, i) => <NewsRow key={i} n={n} />)
         )}
       </ScrollView>
     </Screen>

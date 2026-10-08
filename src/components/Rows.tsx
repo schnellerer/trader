@@ -15,8 +15,10 @@ export function NewsRow({ n }: { n: NewsItem }) {
           {n.title}
         </Text>
         <Text style={s.newsMeta}>
+          {n.official ? '✔ ' : ''}
           {n.source} · {timeAgo(n.t)}
           {n.sentiment > 0 ? ' · positiv' : n.sentiment < 0 ? ' · negativ' : ''}
+          {n.lang ? ` · ${n.lang === 'de' ? 'DE' : 'EN'}` : ''}
         </Text>
       </View>
       <Ionicons name="open-outline" size={16} color={colors.muted} />

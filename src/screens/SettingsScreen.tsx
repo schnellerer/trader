@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as Updates from 'expo-updates';
+import { Linking, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { getDisabledSources, NEWS_SOURCES, setSourceEnabled } from '../api/news';
 import { fetchBots } from '../bots/remote';
 import { clearToken, getToken, setToken } from '../bots/settingsApi';
 import { Button, Card, Disclaimer, Screen, SectionTitle } from '../components/UI';
@@ -14,8 +16,11 @@ export default function SettingsScreen() {
   const [token, setTok] = useState('');
   const [hasToken, setHasToken] = useState(false);
   const [tokenMsg, setTokenMsg] = useState('');
+  const [disabled, setDisabled] = useState<string[]>([]);
+  const [upd, setUpd] = useState({ busy: false, msg: '' });
   useEffect(() => {
     getToken().then((t) => setHasToken(!!t));
+    getDisabledSources().then((d) => setDisabled([...d]));
   }, []);
 
   return (
@@ -92,6 +97,66 @@ export default function SettingsScreen() {
           {tokenMsg ? <Text style={[s.muted, { marginTop: 8, color: colors.green }]}>{tokenMsg}</Text> : null}
         </Card>
 
+        <SectionTitle>App-Update</SectionTitle>
+        <Card>
+          <Text style={s.muted}>
+            Version {Updates.runtimeVersion ?? '–'}
+            {Updates.isEnabled ? `\nKanal: ${Updates.channel ?? '–'}${Updates.createdAt ? `\nProgramm-Stand vom ${Updates.createdAt.toLocaleString('de-DE')}` : '\nProgramm-Stand: ursprünglicher Build'}` : '\nUpdates über die Luft sind in Expo Go und im Entwickler-Modus nicht aktiv, nur in der installierten APK.'}
+          </Text>
+          <Button
+            label={upd.busy ? 'Suche läuft …' : 'Nach Update suchen'}
+            icon="cloud-download"
+            disabled={upd.busy || !Updates.isEnabled}
+            onPress={async () => {
+              setUpd({ busy: true, msg: '' });
+              try {
+                const c = await Updates.checkForUpdateAsync();
+                if (!c.isAvailable) return setUpd({ busy: false, msg: 'Du hast bereits die neueste Version.' });
+                setUpd({ busy: true, msg: 'Update wird geladen …' });
+                await Updates.fetchUpdateAsync();
+                setUpd({ busy: false, msg: 'Fertig – die App startet neu.' });
+                await Updates.reloadAsync();
+              } catch (e: any) {
+                setUpd({ busy: false, msg: `Nicht möglich: ${e?.message ?? 'unbekannter Fehler'}` });
+              }
+            }}
+          />
+          {upd.msg ? <Text style={[s.muted, { marginTop: 8, color: colors.green }]}>{upd.msg}</Text> : null}
+          <Text style={[s.muted, { marginTop: 8, lineHeight: 17 }]}>
+            Die App sucht beim Start automatisch nach Updates. Änderungen am Programm (z. B. neue Anzeigen, Quellen, Texte) kommen so ohne neue APK; nur wenn ein neues Bauteil des Handys nötig ist, braucht es einen neuen Build.
+          </Text>
+        </Card>
+
+        <SectionTitle>News-Quellen</SectionTitle>
+        <Card style={{ paddingVertical: 6 }}>
+          <Text style={[s.muted, { paddingVertical: 8 }]}>Wähle, woher deine Börsen-News kommen (alle kostenlos). Die Änderung gilt, wenn du zum Märkte-Tab zurückkehrst oder nach unten ziehst.</Text>
+          {(['de', 'en'] as const).map((lang) => (
+            <View key={lang}>
+              <Text style={s.group}>{lang === 'de' ? 'Deutsch' : 'Englisch'}</Text>
+              {NEWS_SOURCES.filter((x) => x.lang === lang).map((src) => (
+                <View key={src.id} style={s.srcRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.srcName}>{src.name}</Text>
+                    {src.note ? <Text style={s.srcNote}>{src.note}</Text> : null}
+                  </View>
+                  <Switch
+                    value={!disabled.includes(src.id)}
+                    onValueChange={async (v) => {
+                      await setSourceEnabled(src.id, v);
+                      setDisabled(await getDisabledSources().then((d) => [...d]));
+                    }}
+                    trackColor={{ true: colors.accent, false: colors.card2 }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              ))}
+            </View>
+          ))}
+          <Text style={[s.muted, { paddingVertical: 8, lineHeight: 17 }]}>
+            Bei einzelnen Aktien kommen zusätzlich Yahoo Finance, Seeking Alpha, Google News (deutsch und englisch, darin u. a. Der Aktionär, Börse Online, Barron's, WELT) und bei US-Aktien die offiziellen SEC-Pflichtmeldungen (✔) dazu. Bezahlschranken werden nicht umgangen: Es erscheinen nur Schlagzeile und Link.
+          </Text>
+        </Card>
+
         <SectionTitle>Daten</SectionTitle>
         <Card>
           <Text style={s.muted}>
@@ -117,5 +182,9 @@ export default function SettingsScreen() {
 
 const s = StyleSheet.create({
   muted: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  group: { color: colors.text, fontWeight: '700', fontSize: 13, marginTop: 10, marginBottom: 2 },
+  srcRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
+  srcName: { color: colors.text, fontSize: 14 },
+  srcNote: { color: colors.muted, fontSize: 11 },
   input: { backgroundColor: colors.card2, color: colors.text, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, marginTop: 12, marginBottom: 4 },
 });

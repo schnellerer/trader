@@ -37,6 +37,8 @@ export interface NewsItem {
   source: string;
   t: number;
   sentiment: number; // -1, 0, 1
+  lang?: 'de' | 'en';
+  official?: boolean; // offizielle Pflicht-/Unternehmensmitteilung (z. B. SEC)
 }
 
 export type Bias = 'bullish' | 'neutral' | 'bearish';

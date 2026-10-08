@@ -47,6 +47,22 @@ const SECTIONS: Sec[] = [
       'Wichtig: Die Fundament-Schwellen sind Faustregeln, Branchen unterscheiden sich stark, und sie sind nicht rückblickend getestet (Yahoo liefert keine alten Kennzahlen). Der Backtest belegt nur die Momentum-Regeln.',
   },
   {
+    icon: 'newspaper',
+    title: 'News & Quellen',
+    body:
+      'Märkte zeigt Börsen-News aus 16 kostenlosen Quellen (CNBC, MarketWatch, Seeking Alpha, Investing.com, Yahoo, finanzen.net, FAZ, Spiegel, Handelsblatt, Manager Magazin, ntv, Tagesschau, Reuters über Google, GlobeNewswire). Mit den Reitern filterst du nach Deutsch, Englisch oder „Offiziell". Unter Mehr → Einstellungen → News-Quellen schaltest du einzelne Quellen ein oder aus.\n\n' +
+      'Bei einer einzelnen Aktie (Reiter News) kommen Yahoo, Seeking Alpha, Google News (deutsch und englisch, darin u. a. Der Aktionär, Börse Online, Barron\'s, WELT) und bei US-Aktien die offiziellen SEC-Pflichtmeldungen (✔) dazu, z. B. „Quartalszahlen veröffentlicht" oder „Wechsel im Vorstand".\n\n' +
+      'Die Stimmung (grün/rot) ist eine einfache Stichwort-Erkennung in der Schlagzeile, nur ein grober Hinweis. Bezahlschranken werden nicht umgangen: Es erscheinen nur Schlagzeile und Link.',
+  },
+  {
+    icon: 'cloud-download',
+    title: 'App-Updates ohne neue APK',
+    body:
+      'Die App sucht beim Start automatisch nach Updates und lädt sie im Hintergrund; beim nächsten Öffnen ist die neue Version da. Unter Mehr → Einstellungen → App-Update kannst du von Hand suchen.\n\n' +
+      'Das gilt für Änderungen am Programm (Anzeigen, Quellen, Texte, Rechenlogik). Nur wenn ein neues Bauteil des Handys nötig wird (z. B. eine neue Funktion wie Kamera oder ein zusätzliches Paket mit Handy-Anteil), braucht es wieder eine neue APK.\n\n' +
+      'Die Server-Seite (Bots, Ranking, Dividenden, Backtest) aktualisiert sich ohnehin ohne Zutun.',
+  },
+  {
     icon: 'cash',
     title: 'Dividenden',
     body:

@@ -102,14 +102,6 @@ export const PRESETS: Preset[] = [
     sort: (a, b) => (b.upside ?? 0) - (a.upside ?? 0),
   },
   {
-    key: 'dividend',
-    label: 'Dividende',
-    icon: 'cash',
-    desc: 'Dividendenrendite ab 3 % bei sicherer Dividende (Sicherheits-Note mind. 65, keine „Dividendenfalle") und gut handelbarer Größe. Mehr dazu im Reiter „Dividenden".',
-    filter: (r) => (r.div ?? 0) >= 0.03 && (r.dq ?? 0) >= 65 && !r.dtrap && (r.liq === 'large' || r.liq === 'mid'),
-    sort: (a, b) => (b.dq ?? 0) - (a.dq ?? 0) || (b.div ?? 0) - (a.div ?? 0),
-  },
-  {
     key: 'breakout',
     label: 'Ausbruch',
     icon: 'rocket',
